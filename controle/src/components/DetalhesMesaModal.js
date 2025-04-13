@@ -11,12 +11,12 @@ import {
 } from "react-native";
 import AdicionarItensModal from "./AdicionarItensModal";
 import FecharComandaModal from "./FecharComandaModal";
-// import {
-//   atualizarStatusPedido,
-//   getCardapio,
-//   reverterEstoquePedido,
-// } from "../services/mesaService";
-// import { ensureFirebaseInitialized } from "../services/firebase";
+import {
+  atualizarStatusPedido,
+  getCardapio,
+  reverterEstoquePedido,
+} from "../services/mesaService";
+import { ensureFirebaseInitialized } from "../services/firebase";
 
 export default function DetalhesMesaModal({
   visible,

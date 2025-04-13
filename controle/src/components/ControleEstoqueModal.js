@@ -11,11 +11,11 @@ import {
   Animated,
   TouchableOpacity,
 } from "react-native";
-// import {
-//   getEstoque,
-//   removerItemEstoqueECardapio,
-// } from "../services/mesaService";
-// import { ensureFirebaseInitialized } from "../services/firebase";
+import {
+  getEstoque,
+  removerItemEstoqueECardapio,
+} from "../services/mesaService";
+import { ensureFirebaseInitialized } from "../services/firebase";
 
 async function atualizarItemEstoque(nomeItem, novosDados, categoria) {
   const db = await ensureFirebaseInitialized();

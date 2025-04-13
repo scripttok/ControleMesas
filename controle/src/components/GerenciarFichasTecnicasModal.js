@@ -8,7 +8,7 @@ import {
   TextInput,
   Alert,
 } from "react-native";
-// import { adicionarFichaTecnica } from "../services/mesaService";
+import { adicionarFichaTecnica } from "../services/mesaService";
 
 export default function GerenciarFichasTecnicasModal({ visible, onClose }) {
   const [novoItemCardapio, setNovoItemCardapio] = useState("");

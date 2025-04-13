@@ -10,7 +10,7 @@ import {
   Image,
   Alert,
 } from "react-native";
-// import { getCardapio, validarEstoqueParaPedido } from "../services/mesaService";
+import { getCardapio, validarEstoqueParaPedido } from "../services/mesaService";
 
 const formatarNome = (nome) => {
   return nome.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());

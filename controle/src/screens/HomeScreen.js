@@ -23,18 +23,18 @@ import {
   useFocusEffect,
   useRoute,
 } from "@react-navigation/native";
-// import {
-//   adicionarMesaNoFirebase,
-//   getMesas,
-//   getPedidos,
-//   atualizarMesa,
-//   juntarMesas,
-//   adicionarPedido,
-//   getEstoque,
-//   removerMesa,
-//   removerPedidosDaMesa,
-// } from "../services/mesaService";
-// import { ensureFirebaseInitialized } from "../services/firebase";
+import {
+  adicionarMesaNoFirebase,
+  getMesas,
+  getPedidos,
+  atualizarMesa,
+  juntarMesas,
+  adicionarPedido,
+  getEstoque,
+  removerMesa,
+  removerPedidosDaMesa,
+} from "../services/mesaService";
+import { ensureFirebaseInitialized } from "../services/firebase";
 
 export default function HomeScreen() {
   const [searchText, setSearchText] = useState("");

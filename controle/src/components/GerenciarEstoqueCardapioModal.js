@@ -10,11 +10,11 @@ import {
   ScrollView,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-// import {
-//   adicionarNovoItemEstoque,
-//   adicionarNovoItemCardapio,
-// } from "../services/mesaService";
-// import { ensureFirebaseInitialized } from "../services/firebase";
+import {
+  adicionarNovoItemEstoque,
+  adicionarNovoItemCardapio,
+} from "../services/mesaService";
+import { ensureFirebaseInitialized } from "../services/firebase";
 
 export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
   // Campos unificados para estoque e cardápio

@@ -10,13 +10,13 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-// import {
-//   fecharMesa,
-//   enviarComandaViaWhatsApp,
-//   removerPedidosDaMesa,
-// } from "../services/mesaService";
+import {
+  fecharMesa,
+  enviarComandaViaWhatsApp,
+  removerPedidosDaMesa,
+} from "../services/mesaService";
 import * as FileSystem from "expo-file-system";
-// import { salvarHistoricoPedido } from "../services/mesaService";
+import { salvarHistoricoPedido } from "../services/mesaService";
 
 export default function FecharComandaModal({
   visible,

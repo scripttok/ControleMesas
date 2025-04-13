@@ -11,10 +11,10 @@ import {
   RefreshControl,
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-// import {
-//   getHistoricoPedidos,
-//   removerPedidoDoHistorico,
-// } from "../services/mesaService";
+import {
+  getHistoricoPedidos,
+  removerPedidoDoHistorico,
+} from "../services/mesaService";
 
 export default function HistoricoPedidosScreen() {
   const navigation = useNavigation();
