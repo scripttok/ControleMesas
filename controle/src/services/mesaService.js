@@ -1,6 +1,7 @@
 import firebase from "firebase/compat/app";
 import "firebase/compat/database";
 import { ensureFirebaseInitialized } from "./firebase";
+import { Alert } from "react-native";
 
 const waitForConnection = async (db, timeout = 5000) => {
   return new Promise((resolve, reject) => {
@@ -38,7 +39,7 @@ const waitForConnection = async (db, timeout = 5000) => {
 export const adicionarMesaNoFirebase = async (mesa) => {
   const freshDb = await ensureFirebaseInitialized();
   await waitForConnection(freshDb);
-  console.log("(NOBRIDGE) LOG Adicionando mesa ao Firebase:", mesa);
+  "(NOBRIDGE) LOG Adicionando mesa ao Firebase:", mesa;
   return freshDb
     .ref("mesas")
     .push({ ...mesa, createdAt: firebase.database.ServerValue.TIMESTAMP }).key;
@@ -60,7 +61,7 @@ export const getMesas = (callback) => {
       "value",
       (snapshot) => {
         const data = snapshot.val();
-        console.log("(NOBRIDGE) LOG Mesas recebidas:", data);
+        "(NOBRIDGE) LOG Mesas recebidas:", data;
         callback(
           data
             ? Object.entries(data).map(([id, value]) => ({ id, ...value }))
@@ -76,7 +77,7 @@ export const getMesas = (callback) => {
   setupListener();
   return () => {
     if (ref) {
-      console.log("(NOBRIDGE) LOG Desmontando listener de mesas");
+      ("(NOBRIDGE) LOG Desmontando listener de mesas");
       ref.off("value");
     }
   };
@@ -98,7 +99,7 @@ export const getPedidos = (callback) => {
       "value",
       (snapshot) => {
         const data = snapshot.val();
-        console.log("(NOBRIDGE) LOG Pedidos recebidos:", data);
+        "(NOBRIDGE) LOG Pedidos recebidos:", data;
         callback(
           data
             ? Object.entries(data).map(([id, value]) => ({ id, ...value }))
@@ -114,7 +115,7 @@ export const getPedidos = (callback) => {
   setupListener();
   return () => {
     if (ref) {
-      console.log("(NOBRIDGE) LOG Desmontando listener de pedidos");
+      ("(NOBRIDGE) LOG Desmontando listener de pedidos");
       ref.off("value");
     }
   };
@@ -136,13 +137,13 @@ export const atualizarMesa = async (mesaId, updates) => {
       throw new Error("Referência ao Firebase inválida.");
     }
     if (updates === null) {
-      console.log("(NOBRIDGE) LOG Removendo mesa:", mesaId);
+      "(NOBRIDGE) LOG Removendo mesa:", mesaId;
       await ref.remove();
     } else {
-      console.log("(NOBRIDGE) LOG Atualizando mesa:", mesaId, updates);
+      "(NOBRIDGE) LOG Atualizando mesa:", mesaId, updates;
       await ref.update(updates);
     }
-    console.log("(NOBRIDGE) LOG Mesa atualizada com sucesso:", mesaId);
+    "(NOBRIDGE) LOG Mesa atualizada com sucesso:", mesaId;
   } catch (error) {
     console.error("(NOBRIDGE) ERROR Erro ao atualizar/remover mesa:", error);
     throw error;
@@ -199,14 +200,11 @@ export const juntarMesas = async (mesaId1, mesaId2) => {
     updates[`mesas/${mesaId2}`] = null;
 
     await freshDb.ref().update(updates);
-    console.log(
-      "(NOBRIDGE) LOG Mesas juntadas com sucesso:",
+    "(NOBRIDGE) LOG Mesas juntadas com sucesso:",
       novoNomeCliente,
       "Pedidos combinados:",
-      [...pedidosMesa1, ...pedidosMesa2]
-    );
+      [...pedidosMesa1, ...pedidosMesa2];
   } catch (error) {
-    console.error("(NOBRIDGE) ERROR Erro ao juntar mesas:", error);
     throw error;
   }
 };
@@ -222,9 +220,9 @@ export const adicionarPedido = async (mesaId, itens) => {
       entregue: false,
       timestamp: firebase.database.ServerValue.TIMESTAMP,
     };
-    console.log("(NOBRIDGE) LOG Adicionando pedido:", pedido);
+    "(NOBRIDGE) LOG Adicionando pedido:", pedido;
     const pedidoId = await freshDb.ref("pedidos").push(pedido).key;
-    console.log("(NOBRIDGE) LOG Pedido adicionado com sucesso:", pedidoId);
+    "(NOBRIDGE) LOG Pedido adicionado com sucesso:", pedidoId;
     return pedidoId;
   } catch (error) {
     console.error("(NOBRIDGE) ERROR Erro ao adicionar pedido:", error);
@@ -241,7 +239,7 @@ export const getEstoque = (callback) => {
       "value",
       (snapshot) => {
         const data = snapshot.val();
-        console.log("(NOBRIDGE) LOG Estoque recebido:", data);
+        "(NOBRIDGE) LOG Estoque recebido:", data;
         callback(
           data
             ? Object.entries(data).map(([id, value]) => ({ id, ...value }))
@@ -257,7 +255,7 @@ export const getEstoque = (callback) => {
   setupListener();
   return () => {
     if (ref) {
-      console.log("(NOBRIDGE) LOG Desmontando listener de estoque");
+      ("(NOBRIDGE) LOG Desmontando listener de estoque");
       ref.off("value");
     }
   };
@@ -272,7 +270,7 @@ export const getCardapio = (callback) => {
       "value",
       (snapshot) => {
         const data = snapshot.val();
-        console.log("(NOBRIDGE) LOG Cardápio recebido em mesaService:", data);
+        "(NOBRIDGE) LOG Cardápio recebido em mesaService:", data;
         if (data) {
           const itens = [];
           Object.entries(data).forEach(([categoria, subItens]) => {
@@ -300,7 +298,7 @@ export const getCardapio = (callback) => {
   setupListener();
   return () => {
     if (ref) {
-      console.log("(NOBRIDGE) LOG Desmontando listener de cardápio");
+      ("(NOBRIDGE) LOG Desmontando listener de cardápio");
       ref.off("value");
     }
   };
@@ -315,7 +313,7 @@ export const removerPedidoDoHistorico = async (pedidoId) => {
   try {
     const db = await ensureFirebaseInitialized();
     await db.ref(`historicoPedidos/${pedidoId}`).remove();
-    console.log(`(NOBRIDGE) LOG Pedido ${pedidoId} removido com sucesso`);
+    `(NOBRIDGE) LOG Pedido ${pedidoId} removido com sucesso`;
     return true;
   } catch (error) {
     console.error("(NOBRIDGE) ERROR Erro ao remover pedido:", error);
@@ -358,12 +356,7 @@ export const salvarHistoricoPedido = async (dadosPedido) => {
     const novoHistoricoRef = historicoRef.push();
     await novoHistoricoRef.set(novoHistorico);
 
-    console.log(
-      "Histórico salvo com ID:",
-      novoHistoricoRef.key,
-      "Dados:",
-      novoHistorico
-    );
+    "Histórico salvo com ID:", novoHistoricoRef.key, "Dados:", novoHistorico;
     return novoHistoricoRef.key;
   } catch (error) {
     console.error("Erro ao salvar histórico:", error);
@@ -454,16 +447,17 @@ const COMBOS_SUBITENS = {
 export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
   const db = await ensureFirebaseInitialized();
   try {
-    console.log("(NOBRIDGE) LOG Atualizando status do pedido:", {
-      pedidoId,
-      novoStatus,
-    });
+    "(NOBRIDGE) LOG Atualizando status do pedido:",
+      {
+        pedidoId,
+        novoStatus,
+      };
     await db.ref(`pedidos/${pedidoId}`).update({ entregue: novoStatus });
 
     if (novoStatus === true) {
       const pedidoSnapshot = await db.ref(`pedidos/${pedidoId}`).once("value");
       const pedido = pedidoSnapshot.val();
-      console.log("(NOBRIDGE) LOG Dados do pedido recuperado:", pedido);
+      "(NOBRIDGE) LOG Dados do pedido recuperado:", pedido;
       const itens = pedido?.itens || [];
 
       if (!itens.length) {
@@ -475,21 +469,19 @@ export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
       }
 
       for (const item of itens) {
-        console.log("(NOBRIDGE) LOG Processando item do pedido:", item);
+        "(NOBRIDGE) LOG Processando item do pedido:", item;
         const { nome, quantidade } = item;
 
         if (COMBOS_SUBITENS[nome]) {
-          console.log("(NOBRIDGE) LOG Identificado como combo:", nome);
+          "(NOBRIDGE) LOG Identificado como combo:", nome;
           const subItens = COMBOS_SUBITENS[nome];
 
           for (const subItem of subItens) {
             const { nome: subItemNome, quantidade: subItemQuantidade } =
               subItem;
             const quantidadeTotal = subItemQuantidade * (quantidade || 1);
-            console.log(
-              "(NOBRIDGE) LOG Baixando estoque para subitem do combo:",
-              { nome: subItemNome, quantidadeTotal }
-            );
+            "(NOBRIDGE) LOG Baixando estoque para subitem do combo:",
+              { nome: subItemNome, quantidadeTotal };
 
             const estoqueSnapshot = await db
               .ref(`estoque/${subItemNome}`)
@@ -507,26 +499,22 @@ export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
                 await db
                   .ref(`estoque/${subItemNome}`)
                   .update({ quantidade: novaQuantidade });
-                console.log("(NOBRIDGE) LOG Estoque atualizado:", {
-                  nome: subItemNome,
-                  novaQuantidade,
-                });
+                "(NOBRIDGE) LOG Estoque atualizado:",
+                  {
+                    nome: subItemNome,
+                    novaQuantidade,
+                  };
               } else {
                 await db.ref(`estoque/${subItemNome}`).remove();
-                console.log(
-                  "(NOBRIDGE) LOG Item removido do estoque por zerar:",
-                  subItemNome
-                );
+                "(NOBRIDGE) LOG Item removido do estoque por zerar:",
+                  subItemNome;
                 if (estoqueData.chaveCardapio && estoqueData.categoria) {
                   await db
                     .ref(
                       `cardapio/${estoqueData.categoria}/${estoqueData.chaveCardapio}`
                     )
                     .remove();
-                  console.log(
-                    "(NOBRIDGE) LOG Item removido do cardápio:",
-                    subItemNome
-                  );
+                  "(NOBRIDGE) LOG Item removido do cardápio:", subItemNome;
                 }
               }
             } else {
@@ -537,10 +525,11 @@ export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
             }
           }
         } else {
-          console.log("(NOBRIDGE) LOG Baixando estoque para item não-combo:", {
-            nome,
-            quantidade,
-          });
+          "(NOBRIDGE) LOG Baixando estoque para item não-combo:",
+            {
+              nome,
+              quantidade,
+            };
 
           const estoqueSnapshot = await db.ref(`estoque/${nome}`).once("value");
           const estoqueData = estoqueSnapshot.val();
@@ -553,23 +542,21 @@ export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
               await db
                 .ref(`estoque/${nome}`)
                 .update({ quantidade: novaQuantidade });
-              console.log("(NOBRIDGE) LOG Estoque atualizado:", {
-                nome,
-                novaQuantidade,
-              });
+              "(NOBRIDGE) LOG Estoque atualizado:",
+                {
+                  nome,
+                  novaQuantidade,
+                };
             } else {
               await db.ref(`estoque/${nome}`).remove();
-              console.log(
-                "(NOBRIDGE) LOG Item removido do estoque por zerar:",
-                nome
-              );
+              "(NOBRIDGE) LOG Item removido do estoque por zerar:", nome;
               if (estoqueData.chaveCardapio && estoqueData.categoria) {
                 await db
                   .ref(
                     `cardapio/${estoqueData.categoria}/${estoqueData.chaveCardapio}`
                   )
                   .remove();
-                console.log("(NOBRIDGE) LOG Item removido do cardápio:", nome);
+                "(NOBRIDGE) LOG Item removido do cardápio:", nome;
               }
             }
           } else {
@@ -582,10 +569,11 @@ export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
       }
     }
 
-    console.log("(NOBRIDGE) LOG Status atualizado com sucesso para:", {
-      pedidoId,
-      status: novoStatus,
-    });
+    "(NOBRIDGE) LOG Status atualizado com sucesso para:",
+      {
+        pedidoId,
+        status: novoStatus,
+      };
   } catch (error) {
     console.error("(NOBRIDGE) ERROR Erro ao atualizar status:", error);
     throw error;
@@ -652,12 +640,13 @@ export const adicionarNovoItemEstoque = async (
   const freshDb = await ensureFirebaseInitialized();
   await waitForConnection(freshDb);
   try {
-    console.log("(NOBRIDGE) LOG Iniciando adição ao estoque:", {
-      nome,
-      quantidade,
-      unidade,
-      estoqueMinimo,
-    });
+    "(NOBRIDGE) LOG Iniciando adição ao estoque:",
+      {
+        nome,
+        quantidade,
+        unidade,
+        estoqueMinimo,
+      };
     const ref = freshDb.ref(`estoque/${nome}`);
     const snapshot = await ref.once("value");
     const itemExistente = snapshot.val();
@@ -676,10 +665,7 @@ export const adicionarNovoItemEstoque = async (
     };
 
     await ref.set(itemData);
-    console.log(
-      "(NOBRIDGE) LOG Item adicionado ao estoque com sucesso:",
-      itemData
-    );
+    "(NOBRIDGE) LOG Item adicionado ao estoque com sucesso:", itemData;
   } catch (error) {
     console.error("(NOBRIDGE) ERROR Falha ao adicionar ao estoque:", error);
     throw error;
@@ -690,10 +676,11 @@ export const removerEstoque = async (itemId, quantidade) => {
   const freshDb = await ensureFirebaseInitialized();
   await waitForConnection(freshDb);
   try {
-    console.log("(NOBRIDGE) LOG Tentando remover do estoque:", {
-      itemId,
-      quantidade,
-    });
+    "(NOBRIDGE) LOG Tentando remover do estoque:",
+      {
+        itemId,
+        quantidade,
+      };
     const ref = freshDb.ref(`estoque/${itemId}`);
     const snapshot = await ref.once("value");
     const itemExistente = snapshot.val();
@@ -714,10 +701,7 @@ export const removerEstoque = async (itemId, quantidade) => {
     };
 
     await ref.set(itemData);
-    console.log(
-      "(NOBRIDGE) LOG Item removido do estoque com sucesso:",
-      itemData
-    );
+    "(NOBRIDGE) LOG Item removido do estoque com sucesso:", itemData;
   } catch (error) {
     console.error("(NOBRIDGE) ERROR Erro ao remover do estoque:", error);
     throw error;
@@ -727,7 +711,7 @@ export const removerEstoque = async (itemId, quantidade) => {
 export const reverterEstoquePedido = async (pedidoId) => {
   const db = await ensureFirebaseInitialized();
   try {
-    console.log("(NOBRIDGE) LOG Revertendo estoque do pedido:", pedidoId);
+    "(NOBRIDGE) LOG Revertendo estoque do pedido:", pedidoId;
     const pedidoSnapshot = await db.ref(`pedidos/${pedidoId}`).once("value");
     const pedido = pedidoSnapshot.val();
 
@@ -744,7 +728,7 @@ export const reverterEstoquePedido = async (pedidoId) => {
       const { nome, quantidade } = item;
 
       if (COMBOS_SUBITENS[nome]) {
-        console.log("(NOBRIDGE) LOG Revertendo estoque para combo:", nome);
+        "(NOBRIDGE) LOG Revertendo estoque para combo:", nome;
         const subItens = COMBOS_SUBITENS[nome];
         for (const subItem of subItens) {
           const { nome: subItemNome, quantidade: subItemQuantidade } = subItem;
@@ -761,16 +745,18 @@ export const reverterEstoquePedido = async (pedidoId) => {
           await db
             .ref(`estoque/${subItemNome}`)
             .update({ quantidade: novaQuantidade });
-          console.log("(NOBRIDGE) LOG Estoque revertido para subitem:", {
-            nome: subItemNome,
-            novaQuantidade,
-          });
+          "(NOBRIDGE) LOG Estoque revertido para subitem:",
+            {
+              nome: subItemNome,
+              novaQuantidade,
+            };
         }
       } else {
-        console.log("(NOBRIDGE) LOG Revertendo estoque para item:", {
-          nome,
-          quantidade,
-        });
+        "(NOBRIDGE) LOG Revertendo estoque para item:",
+          {
+            nome,
+            quantidade,
+          };
 
         const estoqueSnapshot = await db.ref(`estoque/${nome}`).once("value");
         const estoqueData = estoqueSnapshot.val();
@@ -779,15 +765,16 @@ export const reverterEstoquePedido = async (pedidoId) => {
         const novaQuantidade = quantidadeAtual + quantidade;
 
         await db.ref(`estoque/${nome}`).update({ quantidade: novaQuantidade });
-        console.log("(NOBRIDGE) LOG Estoque revertido:", {
-          nome,
-          novaQuantidade,
-        });
+        "(NOBRIDGE) LOG Estoque revertido:",
+          {
+            nome,
+            novaQuantidade,
+          };
       }
     }
 
     await db.ref(`pedidos/${pedidoId}`).remove();
-    console.log("(NOBRIDGE) LOG Pedido removido após reversão:", pedidoId);
+    "(NOBRIDGE) LOG Pedido removido após reversão:", pedidoId;
   } catch (error) {
     console.error(
       "(NOBRIDGE) ERROR Erro ao reverter estoque do pedido:",
@@ -807,14 +794,15 @@ export const adicionarNovoItemCardapio = async (
 ) => {
   const db = await ensureFirebaseInitialized();
   try {
-    console.log("(NOBRIDGE) LOG Iniciando adição ao cardápio:", {
-      nome,
-      precoUnitario,
-      imagemUrl,
-      categoria,
-      chaveUnica,
-      descricao,
-    });
+    "(NOBRIDGE) LOG Iniciando adição ao cardápio:",
+      {
+        nome,
+        precoUnitario,
+        imagemUrl,
+        categoria,
+        chaveUnica,
+        descricao,
+      };
 
     const itemData = {
       nome,
@@ -824,10 +812,7 @@ export const adicionarNovoItemCardapio = async (
     };
 
     await db.ref(`cardapio/${categoria}/${chaveUnica}`).set(itemData);
-    console.log(
-      "(NOBRIDGE) LOG Item adicionado ao cardápio com sucesso:",
-      itemData
-    );
+    "(NOBRIDGE) LOG Item adicionado ao cardápio com sucesso:", itemData;
   } catch (error) {
     console.error("(NOBRIDGE) ERROR Detalhes do erro no cardápio:", {
       message: error.message,
@@ -847,15 +832,13 @@ export const removerItemEstoqueECardapio = async (nomeItem, categoria) => {
 
     if (chaveCardapio) {
       await db.ref(`cardapio/${categoria}/${chaveCardapio}`).remove();
-      console.log(`(NOBRIDGE) LOG Item ${nomeItem} removido do cardápio`);
+      `(NOBRIDGE) LOG Item ${nomeItem} removido do cardápio`;
     } else {
-      console.log(
-        `(NOBRIDGE) LOG Nenhuma entrada no cardápio encontrada para ${nomeItem}`
-      );
+      `(NOBRIDGE) LOG Nenhuma entrada no cardápio encontrada para ${nomeItem}`;
     }
 
     await db.ref(`estoque/${nomeItem}`).remove();
-    console.log(`(NOBRIDGE) LOG Item ${nomeItem} removido do estoque`);
+    `(NOBRIDGE) LOG Item ${nomeItem} removido do estoque`;
   } catch (error) {
     console.error("(NOBRIDGE) ERROR Erro ao remover item:", {
       message: error.message,
@@ -875,9 +858,7 @@ export const atualizarQuantidadeEstoque = async (
     await db
       .ref(`estoque/${nomeItem}/quantidade`)
       .set(parseInt(novaQuantidade, 10));
-    console.log(
-      `(NOBRIDGE) LOG Quantidade de ${nomeItem} atualizada para ${novaQuantidade}`
-    );
+    `(NOBRIDGE) LOG Quantidade de ${nomeItem} atualizada para ${novaQuantidade}`;
 
     if (parseInt(novaQuantidade, 10) <= 0) {
       const snapshot = await db
@@ -887,15 +868,11 @@ export const atualizarQuantidadeEstoque = async (
 
       if (chaveCardapio) {
         await db.ref(`cardapio/${categoria}/${chaveCardapio}`).remove();
-        console.log(
-          `(NOBRIDGE) LOG Item ${nomeItem} removido do cardápio por quantidade zero`
-        );
+        `(NOBRIDGE) LOG Item ${nomeItem} removido do cardápio por quantidade zero`;
       }
 
       await db.ref(`estoque/${nomeItem}`).remove();
-      console.log(
-        `(NOBRIDGE) LOG Item ${nomeItem} removido do estoque por quantidade zero`
-      );
+      `(NOBRIDGE) LOG Item ${nomeItem} removido do estoque por quantidade zero`;
     }
   } catch (error) {
     console.error("(NOBRIDGE) ERROR Erro ao atualizar quantidade:", {
@@ -914,11 +891,12 @@ export const adicionarFichaTecnica = async (
   const freshDb = await ensureFirebaseInitialized();
   await waitForConnection(freshDb);
   try {
-    console.log("(NOBRIDGE) LOG Iniciando adição de ficha técnica:", {
-      itemCardapio,
-      itemEstoque,
-      quantidadePorUnidade,
-    });
+    "(NOBRIDGE) LOG Iniciando adição de ficha técnica:",
+      {
+        itemCardapio,
+        itemEstoque,
+        quantidadePorUnidade,
+      };
     const ref = freshDb.ref(`fichasTecnicas/${itemCardapio}`);
     const snapshot = await ref.once("value");
     const fichaExistente = snapshot.val() || {};
@@ -929,10 +907,7 @@ export const adicionarFichaTecnica = async (
     };
 
     await ref.set(fichaData);
-    console.log(
-      "(NOBRIDGE) LOG Ficha técnica adicionada com sucesso:",
-      fichaData
-    );
+    "(NOBRIDGE) LOG Ficha técnica adicionada com sucesso:", fichaData;
   } catch (error) {
     console.error("(NOBRIDGE) ERROR Falha ao adicionar ficha técnica:", error);
     throw error;
@@ -943,20 +918,16 @@ export const fecharMesa = async (mesaId, updates) => {
   const freshDb = await ensureFirebaseInitialized();
   await waitForConnection(freshDb);
   try {
-    console.log(
-      "(NOBRIDGE) LOG Atualizando mesa para fechamento ou pagamento parcial:",
-      { mesaId, updates }
-    );
+    "(NOBRIDGE) LOG Atualizando mesa para fechamento ou pagamento parcial:",
+      { mesaId, updates };
     const ref = freshDb.ref(`mesas/${mesaId}`);
     const snapshot = await ref.once("value");
     if (!snapshot.exists()) {
       throw new Error(`Mesa ${mesaId} não encontrada.`);
     }
     await ref.update(updates);
-    console.log(
-      "(NOBRIDGE) LOG Mesa atualizada com sucesso para fechamento ou pagamento:",
-      mesaId
-    );
+    "(NOBRIDGE) LOG Mesa atualizada com sucesso para fechamento ou pagamento:",
+      mesaId;
   } catch (error) {
     console.error(
       "(NOBRIDGE) ERROR Erro ao atualizar mesa para fechamento ou pagamento:",
@@ -973,12 +944,13 @@ export const enviarComandaViaWhatsApp = async (
   telefone
 ) => {
   try {
-    console.log("(NOBRIDGE) LOG Gerando texto da comanda para WhatsApp:", {
-      mesaId,
-      pedidos,
-      cardapio,
-      telefone,
-    });
+    "(NOBRIDGE) LOG Gerando texto da comanda para WhatsApp:",
+      {
+        mesaId,
+        pedidos,
+        cardapio,
+        telefone,
+      };
 
     const mesaSnapshot = await firebase
       .database()
@@ -1021,13 +993,13 @@ export const enviarComandaViaWhatsApp = async (
 
     texto += `\nTotal: R$ ${total.toFixed(2)}`;
 
-    console.log("(NOBRIDGE) LOG Texto da comanda gerado com sucesso:", texto);
+    "(NOBRIDGE) LOG Texto da comanda gerado com sucesso:", texto;
 
     const numeroLimpo = telefone.replace(/[^\d+]/g, "");
     const encodedText = encodeURIComponent(texto);
     const whatsappUrl = `whatsapp://send?phone=${numeroLimpo}&text=${encodedText}`;
 
-    console.log("(NOBRIDGE) LOG URL do WhatsApp gerada:", whatsappUrl);
+    "(NOBRIDGE) LOG URL do WhatsApp gerada:", whatsappUrl;
     return whatsappUrl;
   } catch (error) {
     console.error(
@@ -1041,10 +1013,7 @@ export const enviarComandaViaWhatsApp = async (
 export const removerMesa = async (mesaId) => {
   const freshDb = await ensureFirebaseInitialized();
   try {
-    console.log(
-      "(NOBRIDGE) LOG Verificando conexão antes de remover mesa:",
-      mesaId
-    );
+    "(NOBRIDGE) LOG Verificando conexão antes de remover mesa:", mesaId;
     const connectedRef = freshDb.ref(".info/connected");
     const isConnected = await new Promise((resolve) => {
       connectedRef.once("value", (snapshot) => {
@@ -1055,13 +1024,10 @@ export const removerMesa = async (mesaId) => {
       freshDb.goOnline();
       await waitForConnection(freshDb);
     }
-    console.log("(NOBRIDGE) LOG Conexão confirmada, removendo mesa:", mesaId);
+    "(NOBRIDGE) LOG Conexão confirmada, removendo mesa:", mesaId;
     const ref = freshDb.ref(`mesas/${mesaId}`);
     await ref.remove();
-    console.log(
-      "(NOBRIDGE) LOG Mesa removida com sucesso do Firebase:",
-      mesaId
-    );
+    "(NOBRIDGE) LOG Mesa removida com sucesso do Firebase:", mesaId;
   } catch (error) {
     console.error("(NOBRIDGE) ERROR Erro ao remover mesa do Firebase:", error);
     throw error;
@@ -1071,7 +1037,7 @@ export const removerMesa = async (mesaId) => {
 export const removerPedidosDaMesa = async (mesaId) => {
   const freshDb = await ensureFirebaseInitialized();
   try {
-    console.log("(NOBRIDGE) LOG Removendo pedidos da mesa:", mesaId);
+    "(NOBRIDGE) LOG Removendo pedidos da mesa:", mesaId;
     const pedidosSnapshot = await freshDb.ref("pedidos").once("value");
     const todosPedidos = pedidosSnapshot.val() || {};
     const pedidosDaMesa = Object.entries(todosPedidos)
@@ -1085,15 +1051,9 @@ export const removerPedidosDaMesa = async (mesaId) => {
 
     if (Object.keys(updates).length > 0) {
       await freshDb.ref().update(updates);
-      console.log(
-        "(NOBRIDGE) LOG Pedidos removidos com sucesso da mesa:",
-        mesaId
-      );
+      "(NOBRIDGE) LOG Pedidos removidos com sucesso da mesa:", mesaId;
     } else {
-      console.log(
-        "(NOBRIDGE) LOG Nenhum pedido encontrado para a mesa:",
-        mesaId
-      );
+      "(NOBRIDGE) LOG Nenhum pedido encontrado para a mesa:", mesaId;
     }
   } catch (error) {
     console.error("(NOBRIDGE) ERROR Erro ao remover pedidos da mesa:", error);

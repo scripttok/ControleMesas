@@ -52,13 +52,14 @@ export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
     }
 
     try {
-      console.log("(NOBRIDGE) LOG Iniciando processo de adição:", {
-        nomeLimpo,
-        quantidadeEstoque,
-        precoUnitario,
-        categoria,
-        descricao,
-      });
+      "(NOBRIDGE) LOG Iniciando processo de adição:",
+        {
+          nomeLimpo,
+          quantidadeEstoque,
+          precoUnitario,
+          categoria,
+          descricao,
+        };
 
       const chaveUnica = `${categoria.slice(0, 3)}${Date.now()}`;
 
@@ -74,7 +75,7 @@ export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
         categoria: categoria,
       };
       await db.ref(`estoque/${nomeLimpo}`).set(itemEstoque);
-      console.log("(NOBRIDGE) LOG Estoque adicionado com sucesso");
+      ("(NOBRIDGE) LOG Estoque adicionado com sucesso");
 
       // Adicionar ao cardápio com a descrição
       await adicionarNovoItemCardapio(
@@ -85,7 +86,7 @@ export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
         chaveUnica,
         descricao
       );
-      console.log("(NOBRIDGE) LOG Cardápio adicionado com sucesso");
+      ("(NOBRIDGE) LOG Cardápio adicionado com sucesso");
 
       Alert.alert(
         "Sucesso",

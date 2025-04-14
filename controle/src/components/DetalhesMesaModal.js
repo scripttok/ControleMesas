@@ -39,7 +39,7 @@ export default function DetalhesMesaModal({
       const snapshot = await ref.once("value");
       const mesaData = snapshot.val();
       if (mesaData) {
-        console.log("(NOBRIDGE) LOG Mesa atualizada do Firebase:", mesaData);
+        "(NOBRIDGE) LOG Mesa atualizada do Firebase:", mesaData;
         setMesaAtual({ id: mesa.id, ...mesaData });
       }
     } catch (error) {
@@ -58,7 +58,7 @@ export default function DetalhesMesaModal({
         await reverterEstoquePedido(pedidoId);
       } else {
         await pedidoRef.remove();
-        console.log("(NOBRIDGE) LOG Pedido removido do Firebase:", pedidoId);
+        "(NOBRIDGE) LOG Pedido removido do Firebase:", pedidoId;
       }
 
       const novosPedidos = pedidosLocais.filter(
@@ -74,7 +74,7 @@ export default function DetalhesMesaModal({
   };
 
   useEffect(() => {
-    console.log("(NOBRIDGE) LOG Mesa recebida como prop:", mesa);
+    "(NOBRIDGE) LOG Mesa recebida como prop:", mesa;
     setMesaAtual(mesa || {});
     setPedidosLocais(pedidos || []);
 
@@ -82,18 +82,13 @@ export default function DetalhesMesaModal({
     if (visible) {
       fetchMesaAtual();
       unsubscribe = getCardapio((data) => {
-        console.log(
-          "(NOBRIDGE) LOG Cardápio recebido no DetalhesMesaModal:",
-          data
-        );
+        "(NOBRIDGE) LOG Cardápio recebido no DetalhesMesaModal:", data;
         setCardapio(data);
       });
     }
     return () => {
       if (unsubscribe) {
-        console.log(
-          "(NOBRIDGE) LOG Desmontando listener de cardápio no DetalhesMesaModal"
-        );
+        ("(NOBRIDGE) LOG Desmontando listener de cardápio no DetalhesMesaModal");
         unsubscribe();
       }
     };
@@ -102,17 +97,19 @@ export default function DetalhesMesaModal({
   const handleStatusToggle = async (pedidoId, entregueAtual) => {
     if (entregueAtual) return;
 
-    console.log("(NOBRIDGE) LOG Iniciando atualização de status para pedido:", {
-      pedidoId,
-      novoStatus: !entregueAtual,
-    });
+    "(NOBRIDGE) LOG Iniciando atualização de status para pedido:",
+      {
+        pedidoId,
+        novoStatus: !entregueAtual,
+      };
 
     try {
       await atualizarStatusPedido(pedidoId, !entregueAtual);
-      console.log("(NOBRIDGE) LOG Status atualizado com sucesso para:", {
-        pedidoId,
-        status: !entregueAtual,
-      });
+      "(NOBRIDGE) LOG Status atualizado com sucesso para:",
+        {
+          pedidoId,
+          status: !entregueAtual,
+        };
 
       const novosPedidos = pedidosLocais.map((pedido) =>
         pedido.id === pedidoId
@@ -147,15 +144,12 @@ export default function DetalhesMesaModal({
       const pedidoTotal = calcularTotalPedido(pedido.itens);
       return acc + parseFloat(pedidoTotal);
     }, 0);
-    console.log("Calculando total geral:", { pedidos: pedidosValidos, total });
+    "Calculando total geral:", { pedidos: pedidosValidos, total };
     return total.toFixed(2);
   };
 
   const handleAtualizarMesa = (novaMesa) => {
-    console.log(
-      "(NOBRIDGE) LOG Atualizando mesaAtual com novos dados:",
-      novaMesa
-    );
+    "(NOBRIDGE) LOG Atualizando mesaAtual com novos dados:", novaMesa;
     setMesaAtual(novaMesa);
     fetchMesaAtual();
   };

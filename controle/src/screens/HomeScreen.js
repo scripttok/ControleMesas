@@ -62,22 +62,22 @@ export default function HomeScreen() {
     if (route.params?.adicionarMesa) {
       setModalVisible(true);
       navigation.setParams({ adicionarMesa: false });
-      console.log("route.params:", route.params);
+      "route.params:", route.params;
     }
     if (route.params?.controleEstoque) {
       setEstoqueVisible(true);
       navigation.setParams({ controleEstoque: false });
-      console.log("route.params:", route.params);
+      "route.params:", route.params;
     }
     if (route.params?.gerenciarEstoque) {
       setGerenciarVisible(true);
       navigation.setParams({ gerenciarEstoque: false });
-      console.log("route.params:", route.params);
+      "route.params:", route.params;
     }
     if (route.params?.gerenciarFichas) {
       setFichasTecnicasVisible(true);
       navigation.setParams({ gerenciarFichas: false });
-      console.log("route.params:", route.params);
+      "route.params:", route.params;
     }
   }, [route.params, navigation]);
 
@@ -159,7 +159,7 @@ export default function HomeScreen() {
       posY: 0,
       status: "aberta",
     };
-    console.log("novaMesa:", novaMesa);
+    "novaMesa:", novaMesa;
     try {
       await adicionarMesaNoFirebase(novaMesa);
       setModalVisible(false);
@@ -221,7 +221,10 @@ export default function HomeScreen() {
               await juntarMesas(mesaSelecionada, mesaId);
               setMesaSelecionada(null);
             } catch (error) {
-              Alert.alert("Erro", "Não foi possível juntar as mesas.");
+              Alert.alert(
+                "Erro",
+                "Não é possivel juntar mesas se uma delas estiver fechada."
+              );
             }
           },
         },

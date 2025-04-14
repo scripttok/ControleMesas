@@ -147,7 +147,7 @@ export default function FecharComandaModal({
         })
       );
 
-      console.log("Pedido salvo no histórico:", nomeArquivo);
+      "Pedido salvo no histórico:", nomeArquivo;
     } catch (error) {
       console.error("Erro ao salvar pedido no histórico:", error);
       throw error;
@@ -193,7 +193,7 @@ export default function FecharComandaModal({
         historicoPagamentos,
       };
 
-      console.log("Dados completos para histórico:", dadosParaHistorico);
+      "Dados completos para histórico:", dadosParaHistorico;
 
       await salvarHistoricoPedido(dadosParaHistorico);
       await removerPedidosDaMesa(mesa.id); // Usar id em vez de numero
@@ -283,10 +283,7 @@ export default function FecharComandaModal({
         historicoPagamentos,
       };
 
-      console.log(
-        "Antes de chamar fecharMesa para pagamento parcial:",
-        updates
-      );
+      "Antes de chamar fecharMesa para pagamento parcial:", updates;
       await fecharMesa(mesa.id, updates);
 
       Alert.alert(

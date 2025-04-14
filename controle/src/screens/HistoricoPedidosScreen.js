@@ -45,7 +45,7 @@ export default function HistoricoPedidosScreen() {
 
       return () => {
         if (unsubscribe) {
-          console.log("Desmontando listener de histórico");
+          ("Desmontando listener de histórico");
           unsubscribe();
         }
       };

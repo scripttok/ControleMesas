@@ -19,13 +19,13 @@ let db = null;
 export const ensureFirebaseInitialized = async () => {
   try {
     if (!firebase.apps.length) {
-      console.log("(NOBRIDGE) LOG Inicializando Firebase...");
+      ("(NOBRIDGE) LOG Inicializando Firebase...");
       await firebase.initializeApp(firebaseConfig);
 
       // Autenticação anônima com tratamento melhorado
       try {
         await firebase.auth().signInAnonymously();
-        console.log("(NOBRIDGE) LOG Autenticado anonimamente com sucesso");
+        ("(NOBRIDGE) LOG Autenticado anonimamente com sucesso");
       } catch (authError) {
         console.error(
           "(NOBRIDGE) ERROR Falha na autenticação anônima:",
@@ -34,7 +34,7 @@ export const ensureFirebaseInitialized = async () => {
         throw new Error("Falha na autenticação");
       }
 
-      console.log("(NOBRIDGE) LOG Firebase inicializado com sucesso");
+      ("(NOBRIDGE) LOG Firebase inicializado com sucesso");
     }
 
     // Verifica se há usuário autenticado
