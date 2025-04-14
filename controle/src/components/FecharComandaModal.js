@@ -353,8 +353,9 @@ export default function FecharComandaModal({
 
     setIsSubmitting(true);
     try {
-      const whatsappUrl = enviarComandaViaWhatsApp(
-        mesa.id, // Usar id em vez de numero
+      // Aguarda a resolução da promessa para obter a string da URL
+      const whatsappUrl = await enviarComandaViaWhatsApp(
+        mesa.id,
         pedidos,
         cardapio,
         numeroLimpo
@@ -375,7 +376,7 @@ export default function FecharComandaModal({
         "Erro",
         `Não foi possível enviar via WhatsApp: ${error.message}`
       );
-      console.error("Erro ao enviar via WhatsApp:", error);
+      console.error("(NOBRIDGE) ERROR Erro ao enviar via WhatsApp:", error);
     } finally {
       setIsSubmitting(false);
     }

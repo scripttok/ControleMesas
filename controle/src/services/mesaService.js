@@ -966,7 +966,7 @@ export const fecharMesa = async (mesaId, updates) => {
   }
 };
 
-export const enviarComandaViaWhatsApp = (
+export const enviarComandaViaWhatsApp = async (
   mesaId,
   pedidos,
   cardapio,
@@ -980,12 +980,17 @@ export const enviarComandaViaWhatsApp = (
       telefone,
     });
 
-    const mesaSnapshot = firebase
+    const mesaSnapshot = await firebase
       .database()
       .ref(`mesas/${mesaId}`)
       .once("value");
+
     const mesa = mesaSnapshot.val();
-    const nomeMesa = mesa ? mesa.nomeCliente : `Mesa ${mesaId}`;
+    if (!mesa) {
+      console.warn("(NOBRIDGE) WARN Mesa não encontrada:", mesaId);
+      throw new Error("Mesa não encontrada.");
+    }
+    const nomeMesa = mesa.nomeCliente || `Mesa ${mesaId}`;
 
     let texto = `Conta da ${nomeMesa}\nItens:\n`;
     pedidos.forEach((pedido) => {
