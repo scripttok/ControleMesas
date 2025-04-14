@@ -29,7 +29,7 @@ export default function AdicionarItensModal({
 
   useEffect(() => {
     let unsubscribe;
-    if (visible) {
+    if (visible && mesa?.status !== "fechada") {
       unsubscribe = getCardapio((data) => {
         console.log(
           "(NOBRIDGE) LOG Itens recebidos em AdicionarItensModal:",
@@ -37,11 +37,17 @@ export default function AdicionarItensModal({
         );
         setItensDisponiveis(data || []);
       });
+    } else if (visible && mesa?.status === "fechada") {
+      Alert.alert(
+        "Atenção",
+        "Não é possível adicionar itens a uma mesa fechada."
+      );
+      onClose();
     }
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [visible]);
+  }, [visible, mesa]);
 
   const toggleItem = (item) => {
     console.log(
@@ -98,6 +104,14 @@ export default function AdicionarItensModal({
   };
 
   const handleConfirmar = async () => {
+    if (mesa?.status === "fechada") {
+      Alert.alert(
+        "Atenção",
+        "Não é possível adicionar itens a uma mesa fechada."
+      );
+      return;
+    }
+
     console.log(
       "(NOBRIDGE) LOG handleConfirmar - Itens selecionados antes de filtrar:",
       itensSelecionados
@@ -223,7 +237,7 @@ export default function AdicionarItensModal({
     ? itensDisponiveis.filter((item) => item.categoria === categoriaSelecionada)
     : [];
 
-  if (!itensDisponiveis.length && visible) {
+  if (!itensDisponiveis.length && visible && mesa?.status !== "fechada") {
     return (
       <Modal visible={visible} transparent animationType="slide">
         <View style={styles.modalContainer}>
@@ -305,7 +319,6 @@ export default function AdicionarItensModal({
     </>
   );
 }
-
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
