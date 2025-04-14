@@ -26,12 +26,16 @@ export default function AdicionarItensModal({
   const [itensDisponiveis, setItensDisponiveis] = useState([]);
   const [modalCategoriaVisivel, setModalCategoriaVisivel] = useState(false);
   const [categoriaSelecionada, setCategoriaSelecionada] = useState(null);
+  const [termoBusca, setTermoBusca] = useState("");
 
   useEffect(() => {
     let unsubscribe;
     if (visible && mesa?.status !== "fechada") {
       unsubscribe = getCardapio((data) => {
-        "(NOBRIDGE) LOG Itens recebidos em AdicionarItensModal:", data;
+        console.log(
+          "(NOBRIDGE) LOG Itens recebidos em AdicionarItensModal:",
+          data
+        );
         setItensDisponiveis(data || []);
       });
     } else if (visible && mesa?.status === "fechada") {
@@ -47,14 +51,20 @@ export default function AdicionarItensModal({
   }, [visible, mesa]);
 
   const toggleItem = (item) => {
-    "(NOBRIDGE) LOG toggleItem - Tentativa de toggle para item:", item;
+    console.log(
+      "(NOBRIDGE) LOG toggleItem - Tentativa de toggle para item:",
+      item
+    );
     setItensSelecionados((prev) => {
       const existente = prev.find((i) => i.nome === item.nome);
-      "(NOBRIDGE) LOG toggleItem - Itens atuais:", prev;
+      console.log("(NOBRIDGE) LOG toggleItem - Itens atuais:", prev);
 
       if (existente) {
         const novosItens = prev.filter((i) => i.nome !== item.nome);
-        "(NOBRIDGE) LOG toggleItem - Removendo item, novos itens:", novosItens;
+        console.log(
+          "(NOBRIDGE) LOG toggleItem - Removendo item, novos itens:",
+          novosItens
+        );
         return novosItens;
       }
 
@@ -69,7 +79,10 @@ export default function AdicionarItensModal({
         observacao: "",
       };
 
-      "(NOBRIDGE) LOG toggleItem - Novo item adicionado:", novoItem;
+      console.log(
+        "(NOBRIDGE) LOG toggleItem - Novo item adicionado:",
+        novoItem
+      );
       const novosItens = [...prev, novoItem];
       return novosItens;
     });
@@ -100,8 +113,10 @@ export default function AdicionarItensModal({
       return;
     }
 
-    "(NOBRIDGE) LOG handleConfirmar - Itens selecionados antes de filtrar:",
-      itensSelecionados;
+    console.log(
+      "(NOBRIDGE) LOG handleConfirmar - Itens selecionados antes de filtrar:",
+      itensSelecionados
+    );
     const itensValidos = itensSelecionados.filter(
       (item) =>
         item &&
@@ -110,8 +125,10 @@ export default function AdicionarItensModal({
         item.quantidade > 0
     );
 
-    "(NOBRIDGE) LOG handleConfirmar - Itens válidos após filtrar:",
-      itensValidos;
+    console.log(
+      "(NOBRIDGE) LOG handleConfirmar - Itens válidos após filtrar:",
+      itensValidos
+    );
 
     if (itensValidos.length === 0) {
       console.warn(
@@ -126,8 +143,10 @@ export default function AdicionarItensModal({
 
     try {
       await validarEstoqueParaPedido(itensValidos);
-      "(NOBRIDGE) LOG handleConfirmar - Estoque validado, chamando onConfirm com itens:",
-        itensValidos;
+      console.log(
+        "(NOBRIDGE) LOG handleConfirmar - Estoque validado, chamando onConfirm com itens:",
+        itensValidos
+      );
       onConfirm(itensValidos);
       onClose();
       setItensSelecionados([]);
@@ -144,6 +163,7 @@ export default function AdicionarItensModal({
   const fecharModalCategoria = () => {
     setModalCategoriaVisivel(false);
     setCategoriaSelecionada(null);
+    setTermoBusca(""); // Limpa a busca ao fechar a categoria
   };
 
   const CustomButton = ({ title, onPress, color }) => (
@@ -211,25 +231,23 @@ export default function AdicionarItensModal({
     );
   };
 
+  // Ordenar categorias em ordem alfabética
   const categorias = [
     ...new Set(itensDisponiveis.map((item) => item.categoria)),
-  ];
+  ].sort((a, b) => a.localeCompare(b));
+
+  // Filtrar e ordenar itens com base no termo de busca
+  const itensFiltrados = itensDisponiveis
+    .filter((item) =>
+      item?.nome && termoBusca
+        ? item.nome.toLowerCase().startsWith(termoBusca.toLowerCase())
+        : true
+    )
+    .sort((a, b) => a.nome.localeCompare(b.nome));
 
   const itensDaCategoria = categoriaSelecionada
-    ? itensDisponiveis.filter((item) => item.categoria === categoriaSelecionada)
-    : [];
-
-  if (!itensDisponiveis.length && visible && mesa?.status !== "fechada") {
-    return (
-      <Modal visible={visible} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.titulo}>Carregando cardápio...</Text>
-          </View>
-        </View>
-      </Modal>
-    );
-  }
+    ? itensFiltrados.filter((item) => item.categoria === categoriaSelecionada)
+    : itensFiltrados;
 
   return (
     <>
@@ -239,14 +257,32 @@ export default function AdicionarItensModal({
             <Text style={styles.titulo}>
               Adicionar Itens para {mesa?.nomeCliente || "Cliente"}
             </Text>
+            <View style={styles.buscaContainer}>
+              {termoBusca ? (
+                <TouchableOpacity
+                  style={styles.limparBusca}
+                  onPress={() => setTermoBusca("")}
+                >
+                  <Text style={styles.limparBuscaTexto}>X</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
             <FlatList
-              data={categorias}
-              renderItem={renderCategoria}
-              keyExtractor={(item) => `cat-${item}`}
+              data={termoBusca ? itensFiltrados : categorias}
+              renderItem={termoBusca ? renderItem : renderCategoria}
+              keyExtractor={(item, index) =>
+                termoBusca
+                  ? `${item.categoria}-${item.nome}-${index}`
+                  : `cat-${item}-${index}`
+              }
               style={styles.flatList}
               contentContainerStyle={styles.flatListContent}
               ListEmptyComponent={
-                <Text style={styles.itemTexto}>Sem categorias disponíveis</Text>
+                <Text style={styles.itemTexto}>
+                  {termoBusca
+                    ? `Nenhum item encontrado para "${termoBusca}"`
+                    : "Sem categorias disponíveis"}
+                </Text>
               }
             />
             <View style={styles.botoes}>
@@ -259,6 +295,7 @@ export default function AdicionarItensModal({
                 title="Cancelar"
                 onPress={() => {
                   setItensSelecionados([]);
+                  setTermoBusca("");
                   onClose();
                 }}
                 color="#D32F2F"
@@ -271,6 +308,25 @@ export default function AdicionarItensModal({
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.titulo}>{categoriaSelecionada}</Text>
+            <View style={styles.buscaContainer}>
+              <TextInput
+                style={styles.inputBusca}
+                placeholder="Buscar item..."
+                value={termoBusca}
+                onChangeText={(text) => {
+                  console.log("(NOBRIDGE) LOG Novo termo de busca:", text);
+                  setTermoBusca(text);
+                }}
+              />
+              {termoBusca ? (
+                <TouchableOpacity
+                  style={styles.limparBusca}
+                  onPress={() => setTermoBusca("")}
+                >
+                  <Text style={styles.limparBuscaTexto}>X</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
             <FlatList
               data={itensDaCategoria}
               renderItem={renderItem}
@@ -280,7 +336,11 @@ export default function AdicionarItensModal({
               style={styles.flatList}
               contentContainerStyle={styles.flatListContent}
               ListEmptyComponent={
-                <Text style={styles.itemTexto}>Sem itens nesta categoria</Text>
+                <Text style={styles.itemTexto}>
+                  {termoBusca
+                    ? `Nenhum item encontrado para "${termoBusca}"`
+                    : "Sem itens nesta categoria"}
+                </Text>
               }
             />
             <View style={styles.botoes}>
@@ -291,7 +351,10 @@ export default function AdicionarItensModal({
               />
               <CustomButton
                 title="Fechar"
-                onPress={fecharModalCategoria}
+                onPress={() => {
+                  setTermoBusca("");
+                  fecharModalCategoria();
+                }}
                 color="#D32F2F"
               />
             </View>
@@ -301,6 +364,7 @@ export default function AdicionarItensModal({
     </>
   );
 }
+
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
@@ -325,7 +389,31 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#333",
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: 10,
+  },
+  buscaContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  inputBusca: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#4CAF50",
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 16,
+    color: "#000000",
+    backgroundColor: "#FFFFFF",
+  },
+  limparBusca: {
+    marginLeft: 10,
+    padding: 5,
+  },
+  limparBuscaTexto: {
+    fontSize: 16,
+    color: "#D32F2F",
+    fontWeight: "bold",
   },
   flatList: {
     maxHeight: 300,
