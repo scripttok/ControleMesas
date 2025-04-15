@@ -4,14 +4,24 @@ import "firebase/compat/auth"; // Adicione esta linha para autenticação
 import "firebase/compat/auth";
 import "firebase/compat/database";
 
+// const firebaseConfig = {
+//   apiKey: "AIzaSyAO1MtQfMOU2D6JYG63JgYnaPQEJyrae84",
+//   authDomain: "barracasdepraia-228c0.firebaseapp.com",
+//   databaseURL: "https://barracasdepraia-228c0-default-rtdb.firebaseio.com",
+//   projectId: "barracasdepraia-228c0",
+//   storageBucket: "barracasdepraia-228c0.firebasestorage.app",
+//   messagingSenderId: "315629037060",
+//   appId: "1:315629037060:android:89c18e6e3ad4214b743751",
+// };
+
 const firebaseConfig = {
-  apiKey: "AIzaSyAO1MtQfMOU2D6JYG63JgYnaPQEJyrae84",
-  authDomain: "barracasdepraia-228c0.firebaseapp.com",
-  databaseURL: "https://barracasdepraia-228c0-default-rtdb.firebaseio.com",
+  apiKey: "AIzaSyDpLSlZXOfJCmSVLZwads9EAPENmpy73r8",
+  authDomain: "barracasdepraia-334e2.firebaseapp.com",
+  databaseURL: "https://barracasdepraia-334e2-default-rtdb.firebaseio.com",
   projectId: "barracasdepraia-228c0",
-  storageBucket: "barracasdepraia-228c0.firebasestorage.app",
-  messagingSenderId: "315629037060",
-  appId: "1:315629037060:android:89c18e6e3ad4214b743751",
+  storageBucket: "barracasdepraia-334e2.firebasestorage.app",
+  messagingSenderId: "823906762219",
+  appId: "1:823906762219:android:9dcfd05d545122c6d1edae",
 };
 
 let db = null;

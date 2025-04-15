@@ -192,18 +192,18 @@ export const juntarMesas = async (mesaId1, mesaId2) => {
     const updates = {};
     [...pedidosMesa1, ...pedidosMesa2].forEach((pedido) => {
       updates[`pedidos/${pedido.id}/mesa`] = mesaId1; // Mantém pedidos na mesa1
-      if (!pedido.mesaOriginal) {
-        updates[`pedidos/${pedido.id}/mesaOriginal`] = pedido.mesa;
-      }
+      updates[`pedidos/${pedido.id}/mesaOriginal`] = pedido.mesaOriginal; // Sempre define mesaOriginal
     });
     updates[`mesas/${mesaId1}`] = novaMesa;
     updates[`mesas/${mesaId2}`] = null;
 
     await freshDb.ref().update(updates);
-    "(NOBRIDGE) LOG Mesas juntadas com sucesso:",
+    console.log(
+      "(NOBRIDGE) LOG Mesas juntadas com sucesso:",
       novoNomeCliente,
       "Pedidos combinados:",
-      [...pedidosMesa1, ...pedidosMesa2];
+      [...pedidosMesa1, ...pedidosMesa2]
+    );
   } catch (error) {
     throw error;
   }
