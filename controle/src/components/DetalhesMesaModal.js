@@ -47,6 +47,27 @@ export default function DetalhesMesaModal({
     }
   };
 
+  const atualizarValorRestante = async (totalGeral) => {
+    try {
+      const freshDb = await ensureFirebaseInitialized();
+      const valorPago = parseFloat(mesaAtual?.valorPago || 0);
+      const novoValorRestante = (parseFloat(totalGeral) - valorPago).toFixed(2);
+      await freshDb.ref(`mesas/${mesaAtual.id}`).update({
+        valorRestante: novoValorRestante,
+      });
+      setMesaAtual((prev) => ({
+        ...prev,
+        valorRestante: novoValorRestante,
+      }));
+      "(NOBRIDGE) LOG Valor restante atualizado:", novoValorRestante;
+    } catch (error) {
+      console.error(
+        "(NOBRIDGE) ERROR Erro ao atualizar valor restante:",
+        error
+      );
+    }
+  };
+
   const handleRemoverItem = async (pedidoId, entregue) => {
     try {
       const freshDb = await ensureFirebaseInitialized();
@@ -65,6 +86,8 @@ export default function DetalhesMesaModal({
         (pedido) => pedido.id !== pedidoId
       );
       setPedidosLocais(novosPedidos);
+      const novoTotalGeral = calcularTotalGeral(novosPedidos);
+      await atualizarValorRestante(novoTotalGeral);
 
       Alert.alert("Sucesso", "Item removido com sucesso!");
     } catch (error) {
@@ -93,6 +116,13 @@ export default function DetalhesMesaModal({
       }
     };
   }, [visible, mesa, pedidos]);
+
+  useEffect(() => {
+    if (pedidosLocais.length) {
+      const totalGeral = calcularTotalGeral(pedidosLocais);
+      atualizarValorRestante(totalGeral);
+    }
+  }, [pedidosLocais]);
 
   const handleStatusToggle = async (pedidoId, entregueAtual) => {
     if (entregueAtual) return;
@@ -137,14 +167,15 @@ export default function DetalhesMesaModal({
       .toFixed(2);
   };
 
-  const calcularTotalGeral = () => {
-    const pedidosValidos = Array.isArray(pedidosLocais) ? pedidosLocais : [];
+  const calcularTotalGeral = (pedidos = pedidosLocais) => {
+    const pedidosValidos = Array.isArray(pedidos) ? pedidos : [];
     if (!pedidosValidos.length) return "0.00";
     const total = pedidosValidos.reduce((acc, pedido) => {
       const pedidoTotal = calcularTotalPedido(pedido.itens);
       return acc + parseFloat(pedidoTotal);
     }, 0);
-    "Calculando total geral:", { pedidos: pedidosValidos, total };
+    "(NOBRIDGE) LOG Calculando total geral:",
+      { pedidos: pedidosValidos, total };
     return total.toFixed(2);
   };
 
@@ -239,7 +270,7 @@ export default function DetalhesMesaModal({
         visible={adicionarItensVisible}
         onClose={() => setAdicionarItensVisible(false)}
         onConfirm={(itens) => {
-          onAdicionarPedido(mesaAtual.id, itens); // Usar id em vez de numero
+          onAdicionarPedido(mesaAtual.id, itens);
           setAdicionarItensVisible(false);
         }}
         mesa={mesaAtual}

@@ -92,16 +92,6 @@ export default function HomeScreen() {
       unsubscribeRefs.current.pedidos = getPedidos(async (data) => {
         const currentPedidosCount = data.length;
         const previousPedidosCount = pedidos.length;
-        // if (
-        //   currentPedidosCount > previousPedidosCount &&
-        //   previousPedidosCount !== 0
-        // ) {
-        //   const { sound } = await Audio.Sound.createAsync(
-        //     require("../../assets/notification.mp3")
-        //   );
-        //   soundRef.current = sound;
-        //   await sound.playAsync();
-        // }
         setPedidos(data);
       });
       unsubscribeRefs.current.estoque = getEstoque((data) => {
@@ -144,7 +134,6 @@ export default function HomeScreen() {
   );
 
   const adicionarMesa = async ({ nomeCliente }) => {
-    // Removido numeroMesa
     const mesaNomeExistente = mesas.find(
       (mesa) => mesa.nomeCliente === nomeCliente
     );
@@ -189,7 +178,7 @@ export default function HomeScreen() {
     const mesa = mesas.find((m) => m.id === mesaId);
     if (!mesaSelecionada) {
       setMesaSelecionada(mesaId);
-      const isJuntada = mesa && mesa.nomeCliente.includes(" & "); // Ajustado para verificar nomeCliente
+      const isJuntada = mesa && mesa.nomeCliente.includes(" & ");
       Alert.alert(
         "Mesa Selecionada",
         isJuntada
@@ -220,11 +209,9 @@ export default function HomeScreen() {
             try {
               await juntarMesas(mesaSelecionada, mesaId);
               setMesaSelecionada(null);
+              Alert.alert("Sucesso", "Mesas juntadas com sucesso!");
             } catch (error) {
-              Alert.alert(
-                "Erro",
-                "Não é possivel juntar mesas se uma delas estiver fechada."
-              );
+              Alert.alert("Erro", error.message);
             }
           },
         },
@@ -236,17 +223,33 @@ export default function HomeScreen() {
 
   const separarMesas = async (mesaId) => {
     const mesa = mesas.find((m) => m.id === mesaId);
-    if (!mesa || !mesa.nomeCliente.includes(" & ")) return; // Ajustado para verificar nomeCliente
+    if (!mesa || !mesa.nomeCliente.includes(" & ")) {
+      Alert.alert("Erro", "Esta mesa não é uma mesa juntada.");
+      return;
+    }
+
+    // Verificar se a mesa tem pagamento parcial
+    const hasPagamentoParcial =
+      (mesa.valorPago > 0 || mesa.historicoPagamentos?.length > 0) &&
+      mesa.valorRestante > 0;
+    if (hasPagamentoParcial) {
+      Alert.alert(
+        "Erro",
+        "Não é possível separar mesas com pagamentos parciais."
+      );
+      return;
+    }
+
     const [nome1, nome2] = mesa.nomeCliente.split(" & ");
     try {
       const freshDb = await ensureFirebaseInitialized();
       const pedidosSnapshot = await freshDb.ref("pedidos").once("value");
       const todosPedidos = pedidosSnapshot.val() || {};
       const pedidosMesaJunta = Object.entries(todosPedidos)
-        .filter(([_, pedido]) => pedido.mesa === mesa.id) // Usar mesa.id
+        .filter(([_, pedido]) => pedido.mesa === mesa.id)
         .map(([id, pedido]) => ({ id, ...pedido }));
       const pedidosMesa1 = pedidosMesaJunta.filter(
-        (p) => p.mesaOriginal === mesa.id || !p.mesaOriginal // Ajustar lógica se necessário
+        (p) => p.mesaOriginal === mesa.id || !p.mesaOriginal
       );
       const pedidosMesa2 = pedidosMesaJunta.filter(
         (p) => p.mesaOriginal && p.mesaOriginal !== mesa.id
@@ -288,6 +291,7 @@ export default function HomeScreen() {
         freshDb.ref().update(updates),
       ]);
       setMesaSelecionada(null);
+      Alert.alert("Sucesso", "Mesas separadas com sucesso!");
     } catch (error) {
       console.error("Erro ao separar mesas:", error);
       Alert.alert(
@@ -303,7 +307,6 @@ export default function HomeScreen() {
   }, []);
 
   const handleAdicionarPedido = useCallback(async (mesaId, itens) => {
-    // Usar mesaId
     try {
       await adicionarPedido(mesaId, itens);
     } catch (error) {
@@ -327,7 +330,7 @@ export default function HomeScreen() {
       Alert.alert("Erro", "Mesa não encontrada.");
       return;
     }
-    const mesaPedidos = pedidos.filter((p) => p.mesa === mesa.id); // Usar mesa.id
+    const mesaPedidos = pedidos.filter((p) => p.mesa === mesa.id);
     const temPedidosAbertos = mesaPedidos.some((p) => !p.entregue);
     if (mesa.status === "aberta" && mesaPedidos.length > 0) {
       Alert.alert(
@@ -344,7 +347,7 @@ export default function HomeScreen() {
       return;
     }
     try {
-      await removerPedidosDaMesa(mesa.id); // Usar mesa.id
+      await removerPedidosDaMesa(mesa.id);
       await removerMesa(mesaId);
       setMesas((prevMesas) => prevMesas.filter((m) => m.id !== mesaId));
       if (mesaDetalhes && mesaDetalhes.id === mesaId) {
@@ -386,9 +389,9 @@ export default function HomeScreen() {
           .filter((mesa) =>
             mesa.nomeCliente.toLowerCase().includes(searchText.toLowerCase())
           )
-          .sort((a, b) => a.nomeCliente.localeCompare(b.nomeCliente)) // Ordenar por nomeCliente
+          .sort((a, b) => a.nomeCliente.localeCompare(b.nomeCliente))
           .map((mesa) => {
-            const mesaPedidos = pedidos.filter((p) => p.mesa === mesa.id); // Usar mesa.id
+            const mesaPedidos = pedidos.filter((p) => p.mesa === mesa.id);
             return (
               <Mesa
                 key={mesa.id}
@@ -412,7 +415,7 @@ export default function HomeScreen() {
           visible={detalhesVisible}
           onClose={() => setDetalhesVisible(false)}
           mesa={mesaDetalhes}
-          pedidos={pedidos.filter((p) => p.mesa === mesaDetalhes.id)} // Usar mesa.id
+          pedidos={pedidos.filter((p) => p.mesa === mesaDetalhes.id)}
           onAdicionarPedido={handleAdicionarPedido}
           onAtualizarMesa={handleAtualizarMesa}
         />

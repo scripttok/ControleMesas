@@ -167,8 +167,26 @@ export const juntarMesas = async (mesaId1, mesaId2) => {
     }
 
     if (mesa1.status === "fechada" || mesa2.status === "fechada") {
-      throw new Error("Não é possível juntar uma mesa com status 'fechada'.");
+      throw new Error(
+        "Não é possível juntar uma mesa com status 'fechada'ou pagamento 'Parcial'"
+      );
     }
+
+    // Verificar pagamento parcial primeiro
+    const hasPagamentoParcialMesa1 =
+      (mesa1.valorPago > 0 || mesa1.historicoPagamentos?.length > 0) &&
+      mesa1.valorRestante > 0;
+    const hasPagamentoParcialMesa2 =
+      (mesa2.valorPago > 0 || mesa2.historicoPagamentos?.length > 0) &&
+      mesa2.valorRestante > 0;
+
+    if (hasPagamentoParcialMesa1 || hasPagamentoParcialMesa2) {
+      throw new Error(
+        "Não é possível juntar uma mesa com status 'fechada'ou pagamento 'Parcial'"
+      );
+    }
+
+    // Verificar status depois
 
     const novoNomeCliente = `${mesa1.nomeCliente} & ${mesa2.nomeCliente}`;
 
