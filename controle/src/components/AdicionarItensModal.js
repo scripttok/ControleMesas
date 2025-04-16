@@ -13,7 +13,7 @@ import {
 import { getCardapio, validarEstoqueParaPedido } from "../services/mesaService";
 
 const formatarNome = (nome) => {
-  return nome.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+  return nome;
 };
 
 export default function AdicionarItensModal({
@@ -186,7 +186,7 @@ export default function AdicionarItensModal({
 
   const renderItem = ({ item }) => {
     const selecionado = itensSelecionados.find((i) => i.nome === item.nome);
-    const nomeFormatado = formatarNome(item.nome);
+    const nomeExibicao = formatarNome(item.nome); // Usar para exibição
     return (
       <View style={styles.item}>
         <TouchableOpacity
@@ -202,7 +202,7 @@ export default function AdicionarItensModal({
             )}
             <View style={styles.itemTextContainer}>
               <Text style={styles.itemTexto}>
-                {nomeFormatado} - R$ {(item.precoUnitario || 0).toFixed(2)}
+                {nomeExibicao} - R$ {(item.precoUnitario || 0).toFixed(2)}
               </Text>
               <Text style={styles.itemDescricao}>
                 {item.descrição || "Sem descrição"}

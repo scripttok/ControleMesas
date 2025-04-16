@@ -172,7 +172,6 @@ export const juntarMesas = async (mesaId1, mesaId2) => {
       );
     }
 
-    // Verificar pagamento parcial primeiro
     const hasPagamentoParcialMesa1 =
       (mesa1.valorPago > 0 || mesa1.historicoPagamentos?.length > 0) &&
       mesa1.valorRestante > 0;
@@ -185,8 +184,6 @@ export const juntarMesas = async (mesaId1, mesaId2) => {
         "Não é possível juntar uma mesa com status 'fechada'ou pagamento 'Parcial'"
       );
     }
-
-    // Verificar status depois
 
     const novoNomeCliente = `${mesa1.nomeCliente} & ${mesa2.nomeCliente}`;
 
@@ -209,8 +206,8 @@ export const juntarMesas = async (mesaId1, mesaId2) => {
 
     const updates = {};
     [...pedidosMesa1, ...pedidosMesa2].forEach((pedido) => {
-      updates[`pedidos/${pedido.id}/mesa`] = mesaId1; // Mantém pedidos na mesa1
-      updates[`pedidos/${pedido.id}/mesaOriginal`] = pedido.mesaOriginal; // Sempre define mesaOriginal
+      updates[`pedidos/${pedido.id}/mesa`] = mesaId1;
+      updates[`pedidos/${pedido.id}/mesaOriginal`] = pedido.mesaOriginal;
     });
     updates[`mesas/${mesaId1}`] = novaMesa;
     updates[`mesas/${mesaId2}`] = null;
@@ -549,7 +546,9 @@ export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
               quantidade,
             };
 
-          const estoqueSnapshot = await db.ref(`estoque/${nome}`).once("value");
+          const estoqueSnapshot = await db
+            .ref(`estoque/${nome.toLowerCase()}`)
+            .once("value");
           const estoqueData = estoqueSnapshot.val();
 
           if (estoqueData) {
@@ -558,7 +557,7 @@ export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
 
             if (novaQuantidade > 0) {
               await db
-                .ref(`estoque/${nome}`)
+                .ref(`estoque/${nome.toLowerCase()}`)
                 .update({ quantidade: novaQuantidade });
               "(NOBRIDGE) LOG Estoque atualizado:",
                 {
@@ -566,7 +565,7 @@ export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
                   novaQuantidade,
                 };
             } else {
-              await db.ref(`estoque/${nome}`).remove();
+              await db.ref(`estoque/${nome.toLowerCase()}`).remove();
               "(NOBRIDGE) LOG Item removido do estoque por zerar:", nome;
               if (estoqueData.chaveCardapio && estoqueData.categoria) {
                 await db
@@ -611,7 +610,7 @@ export const validarEstoqueParaPedido = async (itens) => {
           const quantidadeTotal = subItemQuantidade * (quantidade || 1);
 
           const estoqueSnapshot = await db
-            .ref(`estoque/${subItemNome}`)
+            .ref(`estoque/${subItemNome.toLowerCase()}`)
             .once("value");
           const estoqueData = estoqueSnapshot.val();
 
@@ -627,7 +626,9 @@ export const validarEstoqueParaPedido = async (itens) => {
           }
         }
       } else {
-        const estoqueSnapshot = await db.ref(`estoque/${nome}`).once("value");
+        const estoqueSnapshot = await db
+          .ref(`estoque/${nome.toLowerCase()}`)
+          .once("value");
         const estoqueData = estoqueSnapshot.val();
 
         if (!estoqueData) {
@@ -665,7 +666,7 @@ export const adicionarNovoItemEstoque = async (
         unidade,
         estoqueMinimo,
       };
-    const ref = freshDb.ref(`estoque/${nome}`);
+    const ref = freshDb.ref(`estoque/${nome.toLowerCase()}`);
     const snapshot = await ref.once("value");
     const itemExistente = snapshot.val();
 
@@ -674,7 +675,7 @@ export const adicionarNovoItemEstoque = async (
       : parseFloat(quantidade);
 
     const itemData = {
-      nome,
+      nome: nome.toLowerCase(),
       quantidade: novaQuantidade,
       unidade: unidade || (itemExistente ? itemExistente.unidade : "unidades"),
       estoqueMinimo:
@@ -699,7 +700,7 @@ export const removerEstoque = async (itemId, quantidade) => {
         itemId,
         quantidade,
       };
-    const ref = freshDb.ref(`estoque/${itemId}`);
+    const ref = freshDb.ref(`estoque/${itemId.toLowerCase()}`);
     const snapshot = await ref.once("value");
     const itemExistente = snapshot.val();
 
@@ -753,7 +754,7 @@ export const reverterEstoquePedido = async (pedidoId) => {
           const quantidadeTotal = subItemQuantidade * (quantidade || 1);
 
           const estoqueSnapshot = await db
-            .ref(`estoque/${subItemNome}`)
+            .ref(`estoque/${subItemNome.toLowerCase()}`)
             .once("value");
           const estoqueData = estoqueSnapshot.val();
 
@@ -761,7 +762,7 @@ export const reverterEstoquePedido = async (pedidoId) => {
           const novaQuantidade = quantidadeAtual + quantidadeTotal;
 
           await db
-            .ref(`estoque/${subItemNome}`)
+            .ref(`estoque/${subItemNome.toLowerCase()}`)
             .update({ quantidade: novaQuantidade });
           "(NOBRIDGE) LOG Estoque revertido para subitem:",
             {
@@ -776,13 +777,17 @@ export const reverterEstoquePedido = async (pedidoId) => {
             quantidade,
           };
 
-        const estoqueSnapshot = await db.ref(`estoque/${nome}`).once("value");
+        const estoqueSnapshot = await db
+          .ref(`estoque/${nome.toLowerCase()}`)
+          .once("value");
         const estoqueData = estoqueSnapshot.val();
 
         const quantidadeAtual = estoqueData ? estoqueData.quantidade || 0 : 0;
         const novaQuantidade = quantidadeAtual + quantidade;
 
-        await db.ref(`estoque/${nome}`).update({ quantidade: novaQuantidade });
+        await db
+          .ref(`estoque/${nome.toLowerCase()}`)
+          .update({ quantidade: novaQuantidade });
         "(NOBRIDGE) LOG Estoque revertido:",
           {
             nome,
@@ -823,7 +828,7 @@ export const adicionarNovoItemCardapio = async (
       };
 
     const itemData = {
-      nome,
+      nome: nome.toLowerCase(),
       precoUnitario: parseFloat(precoUnitario) || 0,
       descrição: descricao || "Sem descrição",
       imagens: imagemUrl ? [imagemUrl] : [],
@@ -844,18 +849,18 @@ export const removerItemEstoqueECardapio = async (nomeItem, categoria) => {
   const db = await ensureFirebaseInitialized();
   try {
     const snapshot = await db
-      .ref(`estoque/${nomeItem}/chaveCardapio`)
+      .ref(`estoque/${nomeItem.toLowerCase()}/chaveCardapio`)
       .once("value");
     const chaveCardapio = snapshot.val();
 
     if (chaveCardapio) {
-      await db.ref(`cardapio/${categoria}/${chaveCardapio}`).remove();
+      await db.ref(` evaporado/${categoria}/${chaveCardapio}`).remove();
       `(NOBRIDGE) LOG Item ${nomeItem} removido do cardápio`;
     } else {
       `(NOBRIDGE) LOG Nenhuma entrada no cardápio encontrada para ${nomeItem}`;
     }
 
-    await db.ref(`estoque/${nomeItem}`).remove();
+    await db.ref(`estoque/${nomeItem.toLowerCase()}`).remove();
     `(NOBRIDGE) LOG Item ${nomeItem} removido do estoque`;
   } catch (error) {
     console.error("(NOBRIDGE) ERROR Erro ao remover item:", {
@@ -874,13 +879,13 @@ export const atualizarQuantidadeEstoque = async (
   const db = await ensureFirebaseInitialized();
   try {
     await db
-      .ref(`estoque/${nomeItem}/quantidade`)
+      .ref(`estoque/${nomeItem.toLowerCase()}/quantidade`)
       .set(parseInt(novaQuantidade, 10));
     `(NOBRIDGE) LOG Quantidade de ${nomeItem} atualizada para ${novaQuantidade}`;
 
     if (parseInt(novaQuantidade, 10) <= 0) {
       const snapshot = await db
-        .ref(`estoque/${nomeItem}/chaveCardapio`)
+        .ref(`estoque/${nomeItem.toLowerCase()}/chaveCardapio`)
         .once("value");
       const chaveCardapio = snapshot.val();
 
@@ -889,7 +894,7 @@ export const atualizarQuantidadeEstoque = async (
         `(NOBRIDGE) LOG Item ${nomeItem} removido do cardápio por quantidade zero`;
       }
 
-      await db.ref(`estoque/${nomeItem}`).remove();
+      await db.ref(`estoque/${nomeItem.toLowerCase()}`).remove();
       `(NOBRIDGE) LOG Item ${nomeItem} removido do estoque por quantidade zero`;
     }
   } catch (error) {
@@ -915,13 +920,13 @@ export const adicionarFichaTecnica = async (
         itemEstoque,
         quantidadePorUnidade,
       };
-    const ref = freshDb.ref(`fichasTecnicas/${itemCardapio}`);
+    const ref = freshDb.ref(`fichasTecnicas/${itemCardapio.toLowerCase()}`);
     const snapshot = await ref.once("value");
     const fichaExistente = snapshot.val() || {};
 
     const fichaData = {
       ...fichaExistente,
-      [itemEstoque]: parseFloat(quantidadePorUnidade) || 1,
+      [itemEstoque.toLowerCase()]: parseFloat(quantidadePorUnidade) || 1,
     };
 
     await ref.set(fichaData);
