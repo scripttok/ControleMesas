@@ -14,14 +14,24 @@ import "firebase/compat/database";
 //   appId: "1:315629037060:android:89c18e6e3ad4214b743751",
 // };
 
+// const firebaseConfig = {
+//   apiKey: "AIzaSyDpLSlZXOfJCmSVLZwads9EAPENmpy73r8",
+//   authDomain: "barracasdepraia-334e2.firebaseapp.com",
+//   databaseURL: "https://barracasdepraia-334e2-default-rtdb.firebaseio.com",
+//   projectId: "barracasdepraia-228c0",
+//   storageBucket: "barracasdepraia-334e2.firebasestorage.app",
+//   messagingSenderId: "823906762219",
+//   appId: "1:823906762219:android:9dcfd05d545122c6d1edae",
+// };
+
 const firebaseConfig = {
-  apiKey: "AIzaSyDpLSlZXOfJCmSVLZwads9EAPENmpy73r8",
-  authDomain: "barracasdepraia-334e2.firebaseapp.com",
-  databaseURL: "https://barracasdepraia-334e2-default-rtdb.firebaseio.com",
-  projectId: "barracasdepraia-228c0",
-  storageBucket: "barracasdepraia-334e2.firebasestorage.app",
-  messagingSenderId: "823906762219",
-  appId: "1:823906762219:android:9dcfd05d545122c6d1edae",
+  apiKey: "AIzaSyCYGbf_f8yL7WXc0qTH2YTpW61l52rrGbs",
+  authDomain: "bar-do-cesar.firebaseapp.com",
+  databaseURL: "https://bar-do-cesar-default-rtdb.firebaseio.com",
+  projectId: "bar-do-cesar",
+  storageBucket: "bar-do-cesar.firebasestorage.app",
+  messagingSenderId: "525946263891",
+  appId: "1:525946263891:android:804c41528d531c2b2c29a6",
 };
 
 let db = null;
