@@ -374,7 +374,7 @@ export default function HomeScreen() {
             color="#FFF"
             style={styles.chefHatIcon}
           />
-          <Text style={styles.titulo}>Mesas do Restaurante</Text>
+          {/* <Text style={styles.titulo}>Mesas do Restaurante</Text> */}
         </View>
       </View>
       <TextInput

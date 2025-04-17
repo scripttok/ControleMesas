@@ -20,7 +20,13 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.bardocesar.app.x"
+      "package": "com.appbarracas.controle"
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/870c5fc9-a66c-48e5-9b03-a066714d88b4"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,6 +35,9 @@
       "eas": {
         "projectId": "870c5fc9-a66c-48e5-9b03-a066714d88b4"
       }
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
     }
   }
 }
