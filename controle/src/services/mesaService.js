@@ -64,7 +64,11 @@ export const getMesas = (callback) => {
         "(NOBRIDGE) LOG Mesas recebidas:", data;
         callback(
           data
-            ? Object.entries(data).map(([id, value]) => ({ id, ...value }))
+            ? Object.entries(data).map(([id, value]) => ({
+                id,
+                ...value,
+                nomeCliente: value.nomeCliente || `Mesa ${id}`, // Garantir que nomeCliente nunca seja undefined
+              }))
             : []
         );
       },
@@ -150,97 +154,162 @@ export const atualizarMesa = async (mesaId, updates) => {
   }
 };
 
-export const juntarMesas = async (mesaId1, mesaId2) => {
+export const juntarMesas = async (mesaIds) => {
+  if (mesaIds.length < 2) {
+    throw new Error("É necessário pelo menos duas mesas para juntar.");
+  }
+
   const freshDb = await ensureFirebaseInitialized();
   await waitForConnection(freshDb);
   try {
-    const refMesa1 = freshDb.ref(`mesas/${mesaId1}`);
-    const refMesa2 = freshDb.ref(`mesas/${mesaId2}`);
-    const snapshotMesa1 = await refMesa1.once("value");
-    const snapshotMesa2 = await refMesa2.once("value");
+    const mesas = await Promise.all(
+      mesaIds.map(async (id) => {
+        const ref = freshDb.ref(`mesas/${id}`);
+        const snapshot = await ref.once("value");
+        const mesa = snapshot.val();
+        if (!mesa) throw new Error(`Mesa ${id} não encontrada.`);
+        return { id, ...mesa };
+      })
+    );
 
-    const mesa1 = snapshotMesa1.val();
-    const mesa2 = snapshotMesa2.val();
-
-    if (!mesa1 || !mesa2) {
-      throw new Error("Uma ou ambas as mesas não foram encontradas.");
+    for (const mesa of mesas) {
+      if (mesa.status === "fechada") {
+        throw new Error("Não é possível juntar mesa fechada.");
+      }
+      const hasPagamentoParcial =
+        (mesa.valorPago > 0 || mesa.historicoPagamentos?.length > 0) &&
+        mesa.valorRestante > 0;
+      if (hasPagamentoParcial) {
+        throw new Error("Não é possível juntar mesa com pagamento parcial.");
+      }
+      if (!mesa.nomeCliente) {
+        mesa.nomeCliente = `Mesa ${mesa.id}`;
+      }
     }
-
-    if (mesa1.status === "fechada" || mesa2.status === "fechada") {
-      throw new Error(
-        "Não é possível juntar uma mesa com status 'fechada'ou pagamento 'Parcial'"
-      );
-    }
-
-    const hasPagamentoParcialMesa1 =
-      (mesa1.valorPago > 0 || mesa1.historicoPagamentos?.length > 0) &&
-      mesa1.valorRestante > 0;
-    const hasPagamentoParcialMesa2 =
-      (mesa2.valorPago > 0 || mesa2.historicoPagamentos?.length > 0) &&
-      mesa2.valorRestante > 0;
-
-    if (hasPagamentoParcialMesa1 || hasPagamentoParcialMesa2) {
-      throw new Error(
-        "Não é possível juntar uma mesa com status 'fechada'ou pagamento 'Parcial'"
-      );
-    }
-
-    const novoNomeCliente = `${mesa1.nomeCliente} & ${mesa2.nomeCliente}`;
 
     const pedidosSnapshot = await freshDb.ref("pedidos").once("value");
     const todosPedidos = pedidosSnapshot.val() || {};
-    const pedidosMesa1 = Object.entries(todosPedidos)
-      .filter(([_, pedido]) => pedido.mesa === mesaId1)
-      .map(([id, pedido]) => ({ id, ...pedido, mesaOriginal: mesaId1 }));
-    const pedidosMesa2 = Object.entries(todosPedidos)
-      .filter(([_, pedido]) => pedido.mesa === mesaId2)
-      .map(([id, pedido]) => ({ id, ...pedido, mesaOriginal: mesaId2 }));
+    const pedidosCombinados = mesaIds.flatMap((mesaId) =>
+      Object.entries(todosPedidos)
+        .filter(([_, pedido]) => pedido.mesa === mesaId)
+        .map(([id, pedido]) => ({
+          id,
+          ...pedido,
+          mesaOriginal: pedido.mesaOriginal || mesaId,
+        }))
+    );
 
+    const valorTotal = pedidosCombinados.reduce((sum, pedido) => {
+      const pedidoTotal =
+        pedido.itens?.reduce(
+          (subSum, item) =>
+            subSum + (item.quantidade * item.precoUnitario || 0),
+          0
+        ) || 0;
+      return sum + pedidoTotal;
+    }, 0);
+    const valorPago = mesas.reduce(
+      (sum, m) => sum + (parseFloat(m.valorPago) || 0),
+      0
+    );
+    const valorRestante = valorTotal - valorPago;
+
+    const novoNomeCliente = mesas.map((m) => m.nomeCliente).join(" & ");
     const novaMesa = {
       nomeCliente: novoNomeCliente,
-      posX: mesa1.posX || 0,
-      posY: mesa1.posY || 0,
+      posX: mesas[0].posX || 0,
+      posY: mesas[0].posY || 0,
       status: "aberta",
-      createdAt: mesa1.createdAt,
+      createdAt: mesas[0].createdAt,
+      valorTotal,
+      valorPago,
+      valorRestante,
+      historicoPagamentos: mesas.flatMap((m) => m.historicoPagamentos || []),
     };
 
+    // Armazenar dados das mesas originais
+    const mesasOriginais = mesas.reduce((acc, mesa) => {
+      acc[mesa.id] = { ...mesa };
+      return acc;
+    }, {});
+    const juntadaId = mesaIds[0]; // Usar o ID da primeira mesa como identificador
+    await freshDb.ref(`mesasJuntadas/${juntadaId}`).set(mesasOriginais);
+
     const updates = {};
-    [...pedidosMesa1, ...pedidosMesa2].forEach((pedido) => {
-      updates[`pedidos/${pedido.id}/mesa`] = mesaId1;
+    pedidosCombinados.forEach((pedido) => {
+      updates[`pedidos/${pedido.id}/mesa`] = mesaIds[0];
       updates[`pedidos/${pedido.id}/mesaOriginal`] = pedido.mesaOriginal;
     });
-    updates[`mesas/${mesaId1}`] = novaMesa;
-    updates[`mesas/${mesaId2}`] = null;
+    updates[`mesas/${mesaIds[0]}`] = novaMesa;
+    mesaIds.slice(1).forEach((id) => {
+      updates[`mesas/${id}`] = null;
+    });
 
     await freshDb.ref().update(updates);
-    console.log(
-      "(NOBRIDGE) LOG Mesas juntadas com sucesso:",
-      novoNomeCliente,
-      "Pedidos combinados:",
-      [...pedidosMesa1, ...pedidosMesa2]
-    );
   } catch (error) {
+    console.error("Erro ao juntar mesas:", error);
     throw error;
   }
 };
 
 export const adicionarPedido = async (mesaId, itens) => {
+  "(NOBRIDGE) LOG adicionarPedido - Iniciando para mesaId:", mesaId;
+  "(NOBRIDGE) LOG adicionarPedido - Itens recebidos:", itens;
   const freshDb = await ensureFirebaseInitialized();
   await waitForConnection(freshDb);
   try {
+    const itensValidos = itens.filter((item) => {
+      const isValid =
+        item.quantidade > 0 && item.nome && typeof item.nome === "string";
+      "(NOBRIDGE) LOG adicionarPedido - Validando item:",
+        {
+          item,
+          isValid,
+        };
+      return isValid;
+    });
+    "(NOBRIDGE) LOG adicionarPedido - Itens válidos:", itensValidos;
+
+    if (itensValidos.length === 0) {
+      ("(NOBRIDGE) LOG adicionarPedido - Nenhum item válido encontrado");
+      throw new Error("Nenhum item válido para adicionar ao pedido.");
+    }
+
+    // Buscar preços do cardápio
+    const cardapioSnapshot = await freshDb.ref("cardapio").once("value");
+    const cardapioData = cardapioSnapshot.val() || {};
+    const cardapio = [];
+    Object.entries(cardapioData).forEach(([categoria, subItens]) => {
+      Object.values(subItens).forEach((item) => {
+        cardapio.push({
+          nome: item.nome,
+          precoUnitario: item.precoUnitario || 0,
+        });
+      });
+    });
+
     const pedido = {
       mesa: mesaId,
-      itens,
+      itens: itensValidos.map((item) => {
+        const cardapioItem = cardapio.find((c) => c.nome === item.nome);
+        return {
+          nome: item.nome,
+          quantidade: item.quantidade,
+          precoUnitario: cardapioItem ? cardapioItem.precoUnitario : 0,
+          observacao: item.observacao || "",
+        };
+      }),
       status: "aguardando",
       entregue: false,
       timestamp: firebase.database.ServerValue.TIMESTAMP,
     };
-    "(NOBRIDGE) LOG Adicionando pedido:", pedido;
+    "(NOBRIDGE) LOG adicionarPedido - Pedido preparado:", pedido;
+
     const pedidoId = await freshDb.ref("pedidos").push(pedido).key;
-    "(NOBRIDGE) LOG Pedido adicionado com sucesso:", pedidoId;
+    "(NOBRIDGE) LOG adicionarPedido - Pedido adicionado com sucesso:", pedidoId;
     return pedidoId;
   } catch (error) {
-    console.error("(NOBRIDGE) ERROR Erro ao adicionar pedido:", error);
+    console.error("(NOBRIDGE) ERROR adicionarPedido - Erro:", error);
     throw error;
   }
 };
@@ -462,7 +531,7 @@ const COMBOS_SUBITENS = {
 export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
   const db = await ensureFirebaseInitialized();
   try {
-    "(NOBRIDGE) LOG Atualizando status do pedido:",
+    "(NOBRIDGE) LOG atualizarStatusPedido - Iniciando:",
       {
         pedidoId,
         novoStatus,
@@ -470,36 +539,55 @@ export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
     await db.ref(`pedidos/${pedidoId}`).update({ entregue: novoStatus });
 
     if (novoStatus === true) {
+      ("(NOBRIDGE) LOG atualizarStatusPedido - Pedido marcado como entregue, buscando dados");
       const pedidoSnapshot = await db.ref(`pedidos/${pedidoId}`).once("value");
       const pedido = pedidoSnapshot.val();
-      "(NOBRIDGE) LOG Dados do pedido recuperado:", pedido;
-      const itens = pedido?.itens || [];
+      "(NOBRIDGE) LOG atualizarStatusPedido - Dados do pedido:", pedido;
 
-      if (!itens.length) {
+      if (!pedido || !pedido.itens) {
         console.warn(
-          "(NOBRIDGE) WARN Nenhum item encontrado no pedido:",
+          "(NOBRIDGE) WARN atualizarStatusPedido - Pedido ou itens não encontrados:",
           pedidoId
         );
         return;
       }
 
-      for (const item of itens) {
-        "(NOBRIDGE) LOG Processando item do pedido:", item;
+      for (const item of pedido.itens) {
+        "(NOBRIDGE) LOG atualizarStatusPedido - Processando item:", item;
         const { nome, quantidade } = item;
 
+        if (!nome) {
+          console.warn(
+            "(NOBRIDGE) WARN atualizarStatusPedido - Item sem nome, ignorando:",
+            item
+          );
+          continue;
+        }
+
         if (COMBOS_SUBITENS[nome]) {
-          "(NOBRIDGE) LOG Identificado como combo:", nome;
+          "(NOBRIDGE) LOG atualizarStatusPedido - Combo identificado:", nome;
           const subItens = COMBOS_SUBITENS[nome];
 
           for (const subItem of subItens) {
             const { nome: subItemNome, quantidade: subItemQuantidade } =
               subItem;
+            if (!subItemNome) {
+              console.warn(
+                "(NOBRIDGE) WARN atualizarStatusPedido - Subitem sem nome, ignorando:",
+                subItem
+              );
+              continue;
+            }
+
             const quantidadeTotal = subItemQuantidade * (quantidade || 1);
-            "(NOBRIDGE) LOG Baixando estoque para subitem do combo:",
-              { nome: subItemNome, quantidadeTotal };
+            "(NOBRIDGE) LOG atualizarStatusPedido - Baixando estoque para subitem:",
+              {
+                subItemNome,
+                quantidadeTotal,
+              };
 
             const estoqueSnapshot = await db
-              .ref(`estoque/${subItemNome}`)
+              .ref(`estoque/${subItemNome.toLowerCase()}`)
               .once("value");
             const estoqueData = estoqueSnapshot.val();
 
@@ -512,16 +600,16 @@ export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
 
               if (novaQuantidade > 0) {
                 await db
-                  .ref(`estoque/${subItemNome}`)
+                  .ref(`estoque/${subItemNome.toLowerCase()}`)
                   .update({ quantidade: novaQuantidade });
-                "(NOBRIDGE) LOG Estoque atualizado:",
+                "(NOBRIDGE) LOG atualizarStatusPedido - Estoque atualizado:",
                   {
-                    nome: subItemNome,
+                    subItemNome,
                     novaQuantidade,
                   };
               } else {
-                await db.ref(`estoque/${subItemNome}`).remove();
-                "(NOBRIDGE) LOG Item removido do estoque por zerar:",
+                await db.ref(`estoque/${subItemNome.toLowerCase()}`).remove();
+                "(NOBRIDGE) LOG atualizarStatusPedido - Subitem removido do estoque:",
                   subItemNome;
                 if (estoqueData.chaveCardapio && estoqueData.categoria) {
                   await db
@@ -529,22 +617,20 @@ export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
                       `cardapio/${estoqueData.categoria}/${estoqueData.chaveCardapio}`
                     )
                     .remove();
-                  "(NOBRIDGE) LOG Item removido do cardápio:", subItemNome;
+                  "(NOBRIDGE) LOG atualizarStatusPedido - Subitem removido do cardápio:",
+                    subItemNome;
                 }
               }
             } else {
               console.warn(
-                "(NOBRIDGE) WARN Item não encontrado no estoque:",
+                "(NOBRIDGE) WARN atualizarStatusPedido - Subitem não encontrado no estoque:",
                 subItemNome
               );
             }
           }
         } else {
-          "(NOBRIDGE) LOG Baixando estoque para item não-combo:",
-            {
-              nome,
-              quantidade,
-            };
+          "(NOBRIDGE) LOG atualizarStatusPedido - Item não-combo:",
+            { nome, quantidade };
 
           const estoqueSnapshot = await db
             .ref(`estoque/${nome.toLowerCase()}`)
@@ -559,26 +645,28 @@ export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
               await db
                 .ref(`estoque/${nome.toLowerCase()}`)
                 .update({ quantidade: novaQuantidade });
-              "(NOBRIDGE) LOG Estoque atualizado:",
+              "(NOBRIDGE) LOG atualizarStatusPedido - Estoque atualizado:",
                 {
                   nome,
                   novaQuantidade,
                 };
             } else {
               await db.ref(`estoque/${nome.toLowerCase()}`).remove();
-              "(NOBRIDGE) LOG Item removido do estoque por zerar:", nome;
+              "(NOBRIDGE) LOG atualizarStatusPedido - Item removido do estoque:",
+                nome;
               if (estoqueData.chaveCardapio && estoqueData.categoria) {
                 await db
                   .ref(
                     `cardapio/${estoqueData.categoria}/${estoqueData.chaveCardapio}`
                   )
                   .remove();
-                "(NOBRIDGE) LOG Item removido do cardápio:", nome;
+                "(NOBRIDGE) LOG atualizarStatusPedido - Item removido do cardápio:",
+                  nome;
               }
             }
           } else {
             console.warn(
-              "(NOBRIDGE) WARN Item não encontrado no estoque:",
+              "(NOBRIDGE) WARN atualizarStatusPedido - Item não encontrado no estoque:",
               nome
             );
           }
@@ -586,13 +674,10 @@ export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
       }
     }
 
-    "(NOBRIDGE) LOG Status atualizado com sucesso para:",
-      {
-        pedidoId,
-        status: novoStatus,
-      };
+    "(NOBRIDGE) LOG atualizarStatusPedido - Status atualizado com sucesso:",
+      { pedidoId, novoStatus };
   } catch (error) {
-    console.error("(NOBRIDGE) ERROR Erro ao atualizar status:", error);
+    console.error("(NOBRIDGE) ERROR atualizarStatusPedido - Erro:", error);
     throw error;
   }
 };
@@ -656,16 +741,25 @@ export const adicionarNovoItemEstoque = async (
   unidade = "unidades",
   estoqueMinimo = 0
 ) => {
+  "(NOBRIDGE) LOG adicionarNovoItemEstoque - Iniciando:",
+    {
+      nome,
+      quantidade,
+      unidade,
+      estoqueMinimo,
+    };
+
+  if (!nome || typeof nome !== "string") {
+    console.error(
+      "(NOBRIDGE) ERROR adicionarNovoItemEstoque - Nome inválido:",
+      nome
+    );
+    throw new Error("Nome do item é obrigatório e deve ser uma string.");
+  }
+
   const freshDb = await ensureFirebaseInitialized();
   await waitForConnection(freshDb);
   try {
-    "(NOBRIDGE) LOG Iniciando adição ao estoque:",
-      {
-        nome,
-        quantidade,
-        unidade,
-        estoqueMinimo,
-      };
     const ref = freshDb.ref(`estoque/${nome.toLowerCase()}`);
     const snapshot = await ref.once("value");
     const itemExistente = snapshot.val();
@@ -683,10 +777,16 @@ export const adicionarNovoItemEstoque = async (
         (itemExistente ? itemExistente.estoqueMinimo : 0),
     };
 
+    "(NOBRIDGE) LOG adicionarNovoItemEstoque - Dados do item preparados:",
+      itemData;
     await ref.set(itemData);
-    "(NOBRIDGE) LOG Item adicionado ao estoque com sucesso:", itemData;
+    "(NOBRIDGE) LOG adicionarNovoItemEstoque - Item adicionado ao estoque:",
+      itemData;
   } catch (error) {
-    console.error("(NOBRIDGE) ERROR Falha ao adicionar ao estoque:", error);
+    console.error(
+      "(NOBRIDGE) ERROR adicionarNovoItemEstoque - Falha ao adicionar ao estoque:",
+      error
+    );
     throw error;
   }
 };

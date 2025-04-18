@@ -78,7 +78,9 @@ export default function Mesa({ mesa, pedidos, onMove, onDrop, onVerPedidos }) {
             },
           ]}
         >
-          <Text style={styles.nome}>{mesa.nomeCliente || "Sem cliente"}</Text>
+          <Text style={styles.nome}>
+            {mesa.nomeCliente ? mesa.nomeCliente : `Mesa ${mesa.id}`}
+          </Text>
         </Animated.View>
       </PanGestureHandler>
       <TouchableOpacity style={buttonStyle} onPress={() => onVerPedidos(mesa)}>

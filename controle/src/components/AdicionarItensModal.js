@@ -32,10 +32,7 @@ export default function AdicionarItensModal({
     let unsubscribe;
     if (visible && mesa?.status !== "fechada") {
       unsubscribe = getCardapio((data) => {
-        console.log(
-          "(NOBRIDGE) LOG Itens recebidos em AdicionarItensModal:",
-          data
-        );
+        "(NOBRIDGE) LOG Itens recebidos em AdicionarItensModal:", data;
         setItensDisponiveis(data || []);
       });
     } else if (visible && mesa?.status === "fechada") {
@@ -51,20 +48,14 @@ export default function AdicionarItensModal({
   }, [visible, mesa]);
 
   const toggleItem = (item) => {
-    console.log(
-      "(NOBRIDGE) LOG toggleItem - Tentativa de toggle para item:",
-      item
-    );
+    "(NOBRIDGE) LOG toggleItem - Tentativa de toggle para item:", item;
     setItensSelecionados((prev) => {
       const existente = prev.find((i) => i.nome === item.nome);
-      console.log("(NOBRIDGE) LOG toggleItem - Itens atuais:", prev);
+      "(NOBRIDGE) LOG toggleItem - Itens atuais:", prev;
 
       if (existente) {
         const novosItens = prev.filter((i) => i.nome !== item.nome);
-        console.log(
-          "(NOBRIDGE) LOG toggleItem - Removendo item, novos itens:",
-          novosItens
-        );
+        "(NOBRIDGE) LOG toggleItem - Removendo item, novos itens:", novosItens;
         return novosItens;
       }
 
@@ -79,10 +70,7 @@ export default function AdicionarItensModal({
         observacao: "",
       };
 
-      console.log(
-        "(NOBRIDGE) LOG toggleItem - Novo item adicionado:",
-        novoItem
-      );
+      "(NOBRIDGE) LOG toggleItem - Novo item adicionado:", novoItem;
       const novosItens = [...prev, novoItem];
       return novosItens;
     });
@@ -113,10 +101,8 @@ export default function AdicionarItensModal({
       return;
     }
 
-    console.log(
-      "(NOBRIDGE) LOG handleConfirmar - Itens selecionados antes de filtrar:",
-      itensSelecionados
-    );
+    "(NOBRIDGE) LOG handleConfirmar - Itens selecionados antes de filtrar:",
+      itensSelecionados;
     const itensValidos = itensSelecionados.filter(
       (item) =>
         item &&
@@ -125,10 +111,8 @@ export default function AdicionarItensModal({
         item.quantidade > 0
     );
 
-    console.log(
-      "(NOBRIDGE) LOG handleConfirmar - Itens válidos após filtrar:",
-      itensValidos
-    );
+    "(NOBRIDGE) LOG handleConfirmar - Itens válidos após filtrar:",
+      itensValidos;
 
     if (itensValidos.length === 0) {
       console.warn(
@@ -143,10 +127,8 @@ export default function AdicionarItensModal({
 
     try {
       await validarEstoqueParaPedido(itensValidos);
-      console.log(
-        "(NOBRIDGE) LOG handleConfirmar - Estoque validado, chamando onConfirm com itens:",
-        itensValidos
-      );
+      "(NOBRIDGE) LOG handleConfirmar - Estoque validado, chamando onConfirm com itens:",
+        itensValidos;
       onConfirm(itensValidos);
       onClose();
       setItensSelecionados([]);
@@ -314,7 +296,7 @@ export default function AdicionarItensModal({
                 placeholder="Buscar item..."
                 value={termoBusca}
                 onChangeText={(text) => {
-                  console.log("(NOBRIDGE) LOG Novo termo de busca:", text);
+                  "(NOBRIDGE) LOG Novo termo de busca:", text;
                   setTermoBusca(text);
                 }}
               />
