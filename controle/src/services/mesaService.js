@@ -1148,11 +1148,127 @@ export const removerMesa = async (mesaId) => {
       await waitForConnection(freshDb);
     }
     "(NOBRIDGE) LOG Conexão confirmada, removendo mesa:", mesaId;
-    const ref = freshDb.ref(`mesas/${mesaId}`);
-    await ref.remove();
-    "(NOBRIDGE) LOG Mesa removida com sucesso do Firebase:", mesaId;
+
+    // Verificar se a mesa existe
+    const mesaSnapshot = await freshDb.ref(`mesas/${mesaId}`).once("value");
+    const mesa = mesaSnapshot.val();
+    if (!mesa) {
+      "(NOBRIDGE) LOG Mesa não encontrada:", mesaId;
+      Alert.alert("Erro", "Mesa não encontrada.");
+      return;
+    }
+    "(NOBRIDGE) LOG Dados da mesa:", mesa;
+
+    // Verificar se a mesa é juntada ou referenciada em qualquer mesasJuntadas
+    const mesasJuntadasSnapshot = await freshDb
+      .ref("mesasJuntadas")
+      .once("value");
+    const mesasJuntadas = mesasJuntadasSnapshot.val() || {};
+    "(NOBRIDGE) LOG Estrutura de mesasJuntadas antes da remoção:",
+      JSON.stringify(mesasJuntadas, null, 2);
+
+    // Recursivamente coletar todas as mesasJuntadas relacionadas
+    const joinedTableIds = new Set();
+    const processedTableIds = new Set();
+
+    const collectRelatedJuntaIds = (tableId) => {
+      if (processedTableIds.has(tableId)) return;
+      processedTableIds.add(tableId);
+
+      // Adicionar a própria mesa se for uma entrada de mesasJuntadas
+      if (mesasJuntadas[tableId]) {
+        joinedTableIds.add(tableId);
+        "(NOBRIDGE) LOG Mesa juntada encontrada:",
+          tableId,
+          "Mesas originais:",
+          Object.keys(mesasJuntadas[tableId]);
+        // Processar mesas originais
+        Object.keys(mesasJuntadas[tableId]).forEach((originalId) => {
+          collectRelatedJuntaIds(originalId);
+        });
+      }
+
+      // Procurar outras entradas de mesasJuntadas que referenciam a mesa
+      Object.entries(mesasJuntadas).forEach(([juntaId, juntaData]) => {
+        if (Object.keys(juntaData).includes(tableId)) {
+          joinedTableIds.add(juntaId);
+          "(NOBRIDGE) LOG Referência encontrada em mesasJuntadas:",
+            juntaId,
+            "para mesa:",
+            tableId;
+          // Processar a própria juntaId recursivamente
+          collectRelatedJuntaIds(juntaId);
+        }
+      });
+    };
+
+    // Iniciar a coleta a partir da mesaId
+    collectRelatedJuntaIds(mesaId);
+
+    const isMesaJuntada = joinedTableIds.size > 0;
+    "(NOBRIDGE) LOG É mesa juntada ou referenciada:",
+      isMesaJuntada,
+      "Joined Table IDs:",
+      Array.from(joinedTableIds);
+
+    // Remover pedidos associados
+    await removerPedidosDaMesa(mesaId);
+    "(NOBRIDGE) LOG Pedidos da mesa processados:", mesaId;
+
+    // Preparar atualizações
+    const updates = {};
+    updates[`mesas/${mesaId}`] = null;
+    "(NOBRIDGE) LOG Marcando mesa para remoção:", mesaId;
+
+    // Remover todas as entradas de mesasJuntadas identificadas
+    if (isMesaJuntada) {
+      joinedTableIds.forEach((juntaId) => {
+        updates[`mesasJuntadas/${juntaId}`] = null;
+        "(NOBRIDGE) LOG Marcando mesasJuntadas para remoção:", juntaId;
+      });
+    }
+
+    // Aplicar atualizações
+    await freshDb.ref().update(updates);
+    "(NOBRIDGE) LOG Atualizações aplicadas para mesa:", mesaId;
+
+    // Verificar se as entradas foram realmente removidas
+    const postDeletionSnapshot = await freshDb
+      .ref("mesasJuntadas")
+      .once("value");
+    const postDeletionMesasJuntadas = postDeletionSnapshot.val() || {};
+    const remainingReferences = [];
+    Object.entries(postDeletionMesasJuntadas).forEach(
+      ([juntaId, juntaData]) => {
+        if (
+          joinedTableIds.has(juntaId) ||
+          Object.keys(juntaData).some((id) => joinedTableIds.has(id))
+        ) {
+          remainingReferences.push(juntaId);
+        }
+      }
+    );
+    if (remainingReferences.length > 0) {
+      console.error(
+        "(NOBRIDGE) ERROR Entradas de mesasJuntadas não foram removidas:",
+        remainingReferences
+      );
+      Alert.alert(
+        "Erro",
+        "Falha ao remover todas as referências de mesas juntadas."
+      );
+    } else {
+      "(NOBRIDGE) LOG Todas as referências de mesasJuntadas removidas com sucesso para mesa:",
+        mesaId;
+    }
+    "(NOBRIDGE) LOG Estrutura de mesasJuntadas após remoção:",
+      JSON.stringify(postDeletionMesasJuntadas, null, 2);
+
+    "(NOBRIDGE) LOG Mesa e dados associados removidos com sucesso do Firebase:",
+      mesaId;
   } catch (error) {
     console.error("(NOBRIDGE) ERROR Erro ao remover mesa do Firebase:", error);
+    Alert.alert("Erro", "Não foi possível remover a mesa: " + error.message);
     throw error;
   }
 };
