@@ -1093,7 +1093,7 @@ export const enviarComandaViaWhatsApp = async (
         pedido.itens.forEach((item) => {
           const itemCardapio = cardapio.find((c) => c.nome === item.nome);
           const precoUnitario = itemCardapio ? itemCardapio.precoUnitario : 0;
-          texto += `🍴 ${item.nome} (x${
+          texto += `🥂 ${item.nome} (x${
             item.quantidade
           }) - R$ ${precoUnitario.toFixed(2)} cada = R$ ${(
             item.quantidade * precoUnitario
@@ -1117,8 +1117,6 @@ export const enviarComandaViaWhatsApp = async (
     texto += `\n💰 *Total*: R$ ${total.toFixed(
       2
     )}\n\nObrigado por escolher a gente! 🥂 Qualquer dúvida, é só chamar! 😉`;
-
-    texto += `\nTotal: R$ ${total.toFixed(2)}`;
 
     "(NOBRIDGE) LOG Texto da comanda gerado com sucesso:", texto;
 

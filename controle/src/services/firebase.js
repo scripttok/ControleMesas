@@ -14,15 +14,15 @@ import "firebase/compat/database";
 //   appId: "1:315629037060:android:89c18e6e3ad4214b743751",
 // };
 
-const firebaseConfig = {
-  apiKey: "AIzaSyD0cmNAsBDsecY08PPYYXDdGukEGbYpcRA",
-  authDomain: "barracasdepraia-x.firebaseapp.com",
-  databaseURL: "https://barracasdepraia-x-default-rtdb.firebaseio.com",
-  projectId: "barracasdepraia-x",
-  storageBucket: "barracasdepraia-x.firebasestorage.app",
-  messagingSenderId: "584844051269",
-  appId: "1:584844051269:android:8e91caf4e685a371f5b42c",
-};
+// const firebaseConfig = {
+//   apiKey: "AIzaSyD0cmNAsBDsecY08PPYYXDdGukEGbYpcRA",
+//   authDomain: "barracasdepraia-x.firebaseapp.com",
+//   databaseURL: "https://barracasdepraia-x-default-rtdb.firebaseio.com",
+//   projectId: "barracasdepraia-x",
+//   storageBucket: "barracasdepraia-x.firebasestorage.app",
+//   messagingSenderId: "584844051269",
+//   appId: "1:584844051269:android:8e91caf4e685a371f5b42c",
+// };
 
 // const firebaseConfig = {
 //   apiKey: "AIzaSyDpLSlZXOfJCmSVLZwads9EAPENmpy73r8",
@@ -34,15 +34,17 @@ const firebaseConfig = {
 //   appId: "1:823906762219:android:9dcfd05d545122c6d1edae",
 // };
 
-// const firebaseConfig = {
-//   apiKey: "AIzaSyCYGbf_f8yL7WXc0qTH2YTpW61l52rrGbs",
-//   authDomain: "bar-do-cesar.firebaseapp.com",
-//   databaseURL: "https://bar-do-cesar-default-rtdb.firebaseio.com",
-//   projectId: "bar-do-cesar",
-//   storageBucket: "bar-do-cesar.firebasestorage.app",
-//   messagingSenderId: "525946263891",
-//   appId: "1:525946263891:android:804c41528d531c2b2c29a6",
-// };
+// cesar esse abaixo
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCYGbf_f8yL7WXc0qTH2YTpW61l52rrGbs",
+  authDomain: "bar-do-cesar.firebaseapp.com",
+  databaseURL: "https://bar-do-cesar-default-rtdb.firebaseio.com",
+  projectId: "bar-do-cesar",
+  storageBucket: "bar-do-cesar.firebasestorage.app",
+  messagingSenderId: "525946263891",
+  appId: "1:525946263891:android:804c41528d531c2b2c29a6",
+};
 
 let db = null;
 

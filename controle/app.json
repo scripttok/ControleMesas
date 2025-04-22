@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "controle",
+    "name": "Arena CRB",
     "slug": "controle",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,7 +20,18 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.appbarracas.controle"
+      "package": "com.bardocesar.app.x",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "whatsapp"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "updates": {
       "enabled": true,
