@@ -23,18 +23,18 @@ import {
   useFocusEffect,
   useRoute,
 } from "@react-navigation/native";
-// import {
-//   adicionarMesaNoFirebase,
-//   getMesas,
-//   getPedidos,
-//   atualizarMesa,
-//   juntarMesas,
-//   adicionarPedido,
-//   getEstoque,
-//   removerMesa,
-//   removerPedidosDaMesa,
-// } from "../services/mesaService";
-// import { ensureFirebaseInitialized } from "../services/firebase";
+import {
+  adicionarMesaNoFirebase,
+  getMesas,
+  getPedidos,
+  atualizarMesa,
+  juntarMesas,
+  adicionarPedido,
+  getEstoque,
+  removerMesa,
+  removerPedidosDaMesa,
+} from "../services/mesaService";
+import { ensureFirebaseInitialized } from "../services/firebase";
 
 export default function HomeScreen() {
   const [searchText, setSearchText] = useState("");
@@ -46,7 +46,7 @@ export default function HomeScreen() {
   const [estoqueVisible, setEstoqueVisible] = useState(false);
   const [gerenciarVisible, setGerenciarVisible] = useState(false);
   const [fichasTecnicasVisible, setFichasTecnicasVisible] = useState(false);
-  const [mesaSelecionada, setMesaSelecionada] = useState(null);
+  const [mesaSelecionada, setMesaSelecionada] = useState([]);
   const [mesaDetalhes, setMesaDetalhes] = useState(null);
 
   const navigation = useNavigation();
@@ -62,22 +62,22 @@ export default function HomeScreen() {
     if (route.params?.adicionarMesa) {
       setModalVisible(true);
       navigation.setParams({ adicionarMesa: false });
-      console.log("route.params:", route.params);
+      "route.params:", route.params;
     }
     if (route.params?.controleEstoque) {
       setEstoqueVisible(true);
       navigation.setParams({ controleEstoque: false });
-      console.log("route.params:", route.params);
+      "route.params:", route.params;
     }
     if (route.params?.gerenciarEstoque) {
       setGerenciarVisible(true);
       navigation.setParams({ gerenciarEstoque: false });
-      console.log("route.params:", route.params);
+      "route.params:", route.params;
     }
     if (route.params?.gerenciarFichas) {
       setFichasTecnicasVisible(true);
       navigation.setParams({ gerenciarFichas: false });
-      console.log("route.params:", route.params);
+      "route.params:", route.params;
     }
   }, [route.params, navigation]);
 
@@ -92,16 +92,6 @@ export default function HomeScreen() {
       unsubscribeRefs.current.pedidos = getPedidos(async (data) => {
         const currentPedidosCount = data.length;
         const previousPedidosCount = pedidos.length;
-        // if (
-        //   currentPedidosCount > previousPedidosCount &&
-        //   previousPedidosCount !== 0
-        // ) {
-        //   const { sound } = await Audio.Sound.createAsync(
-        //     require("../../assets/notification.mp3")
-        //   );
-        //   soundRef.current = sound;
-        //   await sound.playAsync();
-        // }
         setPedidos(data);
       });
       unsubscribeRefs.current.estoque = getEstoque((data) => {
@@ -144,7 +134,6 @@ export default function HomeScreen() {
   );
 
   const adicionarMesa = async ({ nomeCliente }) => {
-    // Removido numeroMesa
     const mesaNomeExistente = mesas.find(
       (mesa) => mesa.nomeCliente === nomeCliente
     );
@@ -159,7 +148,7 @@ export default function HomeScreen() {
       posY: 0,
       status: "aberta",
     };
-    console.log("novaMesa:", novaMesa);
+    "novaMesa:", novaMesa;
     try {
       await adicionarMesaNoFirebase(novaMesa);
       setModalVisible(false);
@@ -187,16 +176,16 @@ export default function HomeScreen() {
 
   const soltarMesa = (mesaId) => {
     const mesa = mesas.find((m) => m.id === mesaId);
-    if (!mesaSelecionada) {
-      setMesaSelecionada(mesaId);
-      const isJuntada = mesa && mesa.nomeCliente.includes(" & "); // Ajustado para verificar nomeCliente
+    if (!mesaSelecionada.length) {
+      setMesaSelecionada([mesaId]);
+      const isJuntada = mesa && mesa.nomeCliente.includes(" & ");
       Alert.alert(
         "Mesa Selecionada",
         isJuntada
-          ? 'Escolha "Separar", "Remover" ou junte com outra mesa.'
-          : "Solte outra mesa para juntar ou escolha 'Remover'.",
+          ? 'Escolha "Separar", "Remover" ou selecione mais mesas para juntar.'
+          : "Selecione mais mesas para juntar ou escolha 'Remover'.",
         [
-          { text: "Cancelar", onPress: () => setMesaSelecionada(null) },
+          { text: "Cancelar", onPress: () => setMesaSelecionada([]) },
           ...(isJuntada
             ? [{ text: "Separar", onPress: () => separarMesas(mesaId) }]
             : []),
@@ -204,103 +193,271 @@ export default function HomeScreen() {
             text: "Remover",
             onPress: async () => {
               await removerMesaLocal(mesaId);
-              setMesaSelecionada(null);
+              setMesaSelecionada([]);
             },
             style: "destructive",
           },
           { text: "Ok" },
         ]
       );
-    } else if (mesaSelecionada !== mesaId) {
-      Alert.alert("Juntar Mesas", "Deseja juntar essas mesas?", [
-        { text: "Cancelar", onPress: () => setMesaSelecionada(null) },
-        {
-          text: "Juntar",
-          onPress: async () => {
-            try {
-              await juntarMesas(mesaSelecionada, mesaId);
-              setMesaSelecionada(null);
-            } catch (error) {
-              Alert.alert("Erro", "Não foi possível juntar as mesas.");
-            }
+    } else if (!mesaSelecionada.includes(mesaId)) {
+      const novasMesasSelecionadas = [...mesaSelecionada, mesaId];
+      setMesaSelecionada(novasMesasSelecionadas);
+      Alert.alert(
+        "Mesa Adicionada",
+        `Mesas selecionadas: ${novasMesasSelecionadas.length}. Deseja juntar agora?`,
+        [
+          { text: "Selecionar Mais", onPress: () => {} },
+          {
+            text: "Juntar",
+            onPress: async () => {
+              try {
+                await juntarMesas(novasMesasSelecionadas);
+                setMesaSelecionada([]);
+                Alert.alert("Sucesso", "Mesas juntadas com sucesso!");
+              } catch (error) {
+                Alert.alert("Erro", error.message);
+              }
+            },
           },
-        },
-      ]);
+          { text: "Cancelar", onPress: () => setMesaSelecionada([]) },
+        ]
+      );
     } else {
-      setMesaSelecionada(null);
+      setMesaSelecionada([]);
     }
   };
 
   const separarMesas = async (mesaId) => {
+    "(NOBRIDGE) LOG separarMesas - Iniciando separação para mesaId:", mesaId;
     const mesa = mesas.find((m) => m.id === mesaId);
-    if (!mesa || !mesa.nomeCliente.includes(" & ")) return; // Ajustado para verificar nomeCliente
-    const [nome1, nome2] = mesa.nomeCliente.split(" & ");
+    "(NOBRIDGE) LOG separarMesas - Mesa encontrada:", mesa;
+
+    if (!mesa || !mesa.nomeCliente || !mesa.nomeCliente.includes(" & ")) {
+      ("(NOBRIDGE) LOG separarMesas - Validação falhou: mesa inválida ou não juntada");
+      Alert.alert("Erro", "Esta mesa não é uma mesa juntada ou está sem nome.");
+      return;
+    }
+
+    const hasPagamentoParcial =
+      (mesa.valorPago > 0 || mesa.historicoPagamentos?.length > 0) &&
+      mesa.valorRestante > 0;
+    if (hasPagamentoParcial) {
+      ("(NOBRIDGE) LOG separarMesas - Pagamento parcial detectado");
+      Alert.alert(
+        "Erro",
+        "Não é possível separar mesas com pagamentos parciais."
+      );
+      return;
+    }
+
+    const nomesClientes = mesa.nomeCliente.split(" & ").filter((nome) => nome);
+    "(NOBRIDGE) LOG separarMesas - Nomes dos clientes:", nomesClientes;
+    if (nomesClientes.length === 0) {
+      ("(NOBRIDGE) LOG separarMesas - Nenhum nome válido encontrado");
+      Alert.alert("Erro", "Nenhum nome de cliente válido encontrado.");
+      return;
+    }
+
     try {
+      ("(NOBRIDGE) LOG separarMesas - Inicializando Firebase");
       const freshDb = await ensureFirebaseInitialized();
+      ("(NOBRIDGE) LOG separarMesas - Buscando pedidos");
       const pedidosSnapshot = await freshDb.ref("pedidos").once("value");
       const todosPedidos = pedidosSnapshot.val() || {};
+      "(NOBRIDGE) LOG separarMesas - Todos pedidos:", todosPedidos;
+
       const pedidosMesaJunta = Object.entries(todosPedidos)
-        .filter(([_, pedido]) => pedido.mesa === mesa.id) // Usar mesa.id
+        .filter(([_, pedido]) => pedido.mesa === mesaId)
         .map(([id, pedido]) => ({ id, ...pedido }));
-      const pedidosMesa1 = pedidosMesaJunta.filter(
-        (p) => p.mesaOriginal === mesa.id || !p.mesaOriginal // Ajustar lógica se necessário
+      "(NOBRIDGE) LOG separarMesas - Pedidos da mesa juntada:",
+        pedidosMesaJunta;
+
+      // Nova validação: verificar se há pedidos sem mesaOriginal
+      const hasNovosPedidos = pedidosMesaJunta.some(
+        (pedido) => !pedido.mesaOriginal
       );
-      const pedidosMesa2 = pedidosMesaJunta.filter(
-        (p) => p.mesaOriginal && p.mesaOriginal !== mesa.id
-      );
-      if (pedidosMesa2.length === 0 && pedidosMesa1.length > 0) {
-        const metade = Math.ceil(pedidosMesa1.length / 2);
-        pedidosMesa2.push(...pedidosMesa1.splice(metade));
+      if (hasNovosPedidos) {
+        ("(NOBRIDGE) LOG separarMesas - Pedidos novos detectados na mesa juntada");
+        Alert.alert(
+          "Erro",
+          "Não é possível separar mesas com pedidos feitos após a junção."
+        );
+        return;
       }
-      const novaMesa1 = {
-        nomeCliente: nome1,
-        posX: mesa.posX || 0,
-        posY: (mesa.posY || 0) - 50,
-        status: "aberta",
-        createdAt: mesa.createdAt,
-      };
-      const novaMesa2 = {
-        nomeCliente: nome2,
-        posX: mesa.posX || 0,
-        posY: (mesa.posY || 0) + 50,
-        status: "aberta",
-        createdAt: mesa.createdAt,
-      };
+
+      // Agrupar pedidos por mesa original
+      const pedidosPorMesaOriginal = {};
+      pedidosMesaJunta.forEach((pedido) => {
+        const mesaOriginal = pedido.mesaOriginal || mesaId;
+        if (!pedidosPorMesaOriginal[mesaOriginal]) {
+          pedidosPorMesaOriginal[mesaOriginal] = [];
+        }
+        pedidosPorMesaOriginal[mesaOriginal].push(pedido);
+      });
+      "(NOBRIDGE) LOG separarMesas - Pedidos por mesa original:",
+        pedidosPorMesaOriginal;
+
+      // Obter IDs das mesas originais a partir dos pedidos
+      const mesasOriginaisIds = [
+        ...new Set(pedidosMesaJunta.map((p) => p.mesaOriginal).filter(Boolean)),
+      ];
+      "(NOBRIDGE) LOG separarMesas - IDs das mesas originais:",
+        mesasOriginaisIds;
+
+      // Recuperar dados das mesas originais
+      const mesasOriginaisSnapshot = await freshDb
+        .ref(`mesasJuntadas/${mesaId}`)
+        .once("value");
+      const mesasOriginais = mesasOriginaisSnapshot.val() || {};
+      "(NOBRIDGE) LOG separarMesas - Mesas originais recuperadas:",
+        mesasOriginais;
+
+      // Mapear nomes de clientes para IDs das mesas originais
+      const nomeParaMesaOriginal = {};
+      const usedMesaIds = new Set();
+      nomesClientes.forEach((nome, index) => {
+        // Tentar encontrar uma mesa original correspondente ao nome
+        let mesaOriginalId = Object.keys(mesasOriginais).find(
+          (id) =>
+            mesasOriginais[id].nomeCliente.includes(nome) &&
+            !usedMesaIds.has(id)
+        );
+
+        // Se não encontrada, usar um ID de mesaOriginal dos pedidos
+        if (!mesaOriginalId) {
+          mesaOriginalId = mesasOriginaisIds.find((id) => !usedMesaIds.has(id));
+        }
+
+        // Se ainda não encontrada, criar uma nova mesa
+        if (!mesaOriginalId) {
+          mesaOriginalId = `novaMesa${index}`;
+        }
+
+        nomeParaMesaOriginal[nome] = mesaOriginalId;
+        usedMesaIds.add(mesaOriginalId);
+      });
+      "(NOBRIDGE) LOG separarMesas - Mapa nome para mesa original:",
+        nomeParaMesaOriginal;
+
+      const mesasComValores = await Promise.all(
+        nomesClientes.map(async (nome, index) => {
+          "(NOBRIDGE) LOG separarMesas - Processando mesa para nome:", nome;
+          const mesaOriginalId = nomeParaMesaOriginal[nome];
+          const pedidos = pedidosPorMesaOriginal[mesaOriginalId] || [];
+          "(NOBRIDGE) LOG separarMesas - Pedidos para mesa original:", pedidos;
+
+          // Usar dados originais, se disponíveis
+          const mesaOriginalData = mesasOriginais[mesaOriginalId] || {};
+
+          const valorTotal = pedidos.reduce((sum, pedido) => {
+            const pedidoTotal =
+              pedido.itens?.reduce((subSum, item) => {
+                "(NOBRIDGE) LOG separarMesas - Calculando item:", item;
+                if (!item.nome) {
+                  console.warn("(NOBRIDGE) WARN Item sem nome:", item);
+                  return subSum;
+                }
+                return (
+                  subSum + (item.quantidade || 0) * (item.precoUnitario || 0)
+                );
+              }, 0) || 0;
+            return sum + pedidoTotal;
+          }, 0);
+          const valorPago = pedidos.reduce(
+            (sum, p) => sum + (p.valorPago || 0),
+            0
+          );
+          const valorRestante = valorTotal - valorPago;
+          "(NOBRIDGE) LOG separarMesas - Valores calculados:",
+            {
+              valorTotal,
+              valorPago,
+              valorRestante,
+            };
+
+          const mesaData = {
+            nomeCliente: mesaOriginalData.nomeCliente?.includes(nome)
+              ? nome
+              : nome,
+            posX: mesaOriginalData.posX || mesa.posX || 0,
+            posY:
+              (mesaOriginalData.posY || mesa.posY || 0) +
+              index * 50 -
+              (nomesClientes.length - 1) * 25,
+            status: mesaOriginalData.status || "aberta",
+            createdAt: mesaOriginalData.createdAt || mesa.createdAt,
+            valorTotal,
+            valorPago,
+            valorRestante,
+            historicoPagamentos: pedidos.flatMap(
+              (p) => p.historicoPagamentos || []
+            ),
+            pedidos,
+            originalId: mesaOriginalId,
+          };
+          "(NOBRIDGE) LOG separarMesas - Mesa data criada:", mesaData;
+          return mesaData;
+        })
+      );
+      "(NOBRIDGE) LOG separarMesas - Mesas com valores:", mesasComValores;
+
       const updates = {};
-      let mesa1Id, mesa2Id;
-      await Promise.all([
-        adicionarMesaNoFirebase(novaMesa1).then((id) => (mesa1Id = id)),
-        adicionarMesaNoFirebase(novaMesa2).then((id) => (mesa2Id = id)),
-      ]);
-      pedidosMesa1.forEach((p) => {
-        updates[`pedidos/${p.id}/mesa`] = mesa1Id;
-        if (p.mesaOriginal) updates[`pedidos/${p.id}/mesaOriginal`] = null;
-      });
-      pedidosMesa2.forEach((p) => {
-        updates[`pedidos/${p.id}/mesa`] = mesa2Id;
-        if (p.mesaOriginal) updates[`pedidos/${p.id}/mesaOriginal`] = null;
-      });
-      await Promise.all([
-        freshDb.ref(`mesas/${mesaId}`).remove(),
-        freshDb.ref().update(updates),
-      ]);
-      setMesaSelecionada(null);
+      const novasMesas = await Promise.all(
+        mesasComValores.map(async (mesaData) => {
+          "(NOBRIDGE) LOG separarMesas - Processslimando nova mesa:", mesaData;
+          const { pedidos, originalId, ...mesaProps } = mesaData;
+          let newId;
+
+          // Verificar se a mesa original existe e deve ser atualizada
+          if (
+            mesasOriginais[originalId] &&
+            !originalId.startsWith("novaMesa")
+          ) {
+            newId = originalId;
+            updates[`mesas/${newId}`] = {
+              ...mesaProps,
+              id: newId,
+            };
+            "(NOBRIDGE) LOG separarMesas - Atualizando mesa existente:", newId;
+          } else {
+            ("(NOBRIDGE) LOG separarMesas - Adicionando nova mesa ao Firebase");
+            newId = await adicionarMesaNoFirebase(mesaProps);
+          }
+
+          pedidos.forEach((p) => {
+            "(NOBRIDGE) LOG separarMesas - Atualizando pedido:", p.id;
+            updates[`pedidos/${p.id}/mesa`] = newId;
+            updates[`pedidos/${p.id}/mesaOriginal`] = null;
+          });
+
+          return { id: newId, pedidos };
+        })
+      );
+      "(NOBRIDGE) LOG separarMesas - Novas mesas criadas:", novasMesas;
+
+      // Delete only the mesasJuntadas entry, not the reused table
+      updates[`mesasJuntadas/${mesaId}`] = null;
+      "(NOBRIDGE) LOG separarMesas - Atualizações preparadas:", updates;
+      await freshDb.ref().update(updates);
+      ("(NOBRIDGE) LOG separarMesas - Atualizações aplicadas com sucesso");
+
+      setMesaSelecionada([]);
+      Alert.alert("Sucesso", "Mesas separadas com sucesso!");
     } catch (error) {
-      console.error("Erro ao separar mesas:", error);
+      console.error("(NOBRIDGE) ERROR separarMesas - Erro:", error);
       Alert.alert(
         "Erro",
         "Não foi possível separar as mesas: " + error.message
       );
     }
   };
-
   const verPedidos = useCallback((mesa) => {
     setMesaDetalhes(mesa);
     setDetalhesVisible(true);
   }, []);
 
   const handleAdicionarPedido = useCallback(async (mesaId, itens) => {
-    // Usar mesaId
     try {
       await adicionarPedido(mesaId, itens);
     } catch (error) {
@@ -324,7 +481,7 @@ export default function HomeScreen() {
       Alert.alert("Erro", "Mesa não encontrada.");
       return;
     }
-    const mesaPedidos = pedidos.filter((p) => p.mesa === mesa.id); // Usar mesa.id
+    const mesaPedidos = pedidos.filter((p) => p.mesa === mesa.id);
     const temPedidosAbertos = mesaPedidos.some((p) => !p.entregue);
     if (mesa.status === "aberta" && mesaPedidos.length > 0) {
       Alert.alert(
@@ -341,7 +498,7 @@ export default function HomeScreen() {
       return;
     }
     try {
-      await removerPedidosDaMesa(mesa.id); // Usar mesa.id
+      await removerPedidosDaMesa(mesa.id);
       await removerMesa(mesaId);
       setMesas((prevMesas) => prevMesas.filter((m) => m.id !== mesaId));
       if (mesaDetalhes && mesaDetalhes.id === mesaId) {
@@ -368,7 +525,7 @@ export default function HomeScreen() {
             color="#FFF"
             style={styles.chefHatIcon}
           />
-          <Text style={styles.titulo}>Mesas do Restaurante</Text>
+          <Text style={styles.titulo}>Arena CRB</Text>
         </View>
       </View>
       <TextInput
@@ -383,9 +540,9 @@ export default function HomeScreen() {
           .filter((mesa) =>
             mesa.nomeCliente.toLowerCase().includes(searchText.toLowerCase())
           )
-          .sort((a, b) => a.nomeCliente.localeCompare(b.nomeCliente)) // Ordenar por nomeCliente
+          .sort((a, b) => a.nomeCliente.localeCompare(b.nomeCliente))
           .map((mesa) => {
-            const mesaPedidos = pedidos.filter((p) => p.mesa === mesa.id); // Usar mesa.id
+            const mesaPedidos = pedidos.filter((p) => p.mesa === mesa.id);
             return (
               <Mesa
                 key={mesa.id}
@@ -409,7 +566,7 @@ export default function HomeScreen() {
           visible={detalhesVisible}
           onClose={() => setDetalhesVisible(false)}
           mesa={mesaDetalhes}
-          pedidos={pedidos.filter((p) => p.mesa === mesaDetalhes.id)} // Usar mesa.id
+          pedidos={pedidos.filter((p) => p.mesa === mesaDetalhes.id)}
           onAdicionarPedido={handleAdicionarPedido}
           onAtualizarMesa={handleAtualizarMesa}
         />

@@ -11,12 +11,12 @@ import {
 } from "react-native";
 import AdicionarItensModal from "./AdicionarItensModal";
 import FecharComandaModal from "./FecharComandaModal";
-// import {
-//   atualizarStatusPedido,
-//   getCardapio,
-//   reverterEstoquePedido,
-// } from "../services/mesaService";
-// import { ensureFirebaseInitialized } from "../services/firebase";
+import {
+  atualizarStatusPedido,
+  getCardapio,
+  reverterEstoquePedido,
+} from "../services/mesaService";
+import { ensureFirebaseInitialized } from "../services/firebase";
 
 export default function DetalhesMesaModal({
   visible,
@@ -39,11 +39,32 @@ export default function DetalhesMesaModal({
       const snapshot = await ref.once("value");
       const mesaData = snapshot.val();
       if (mesaData) {
-        console.log("(NOBRIDGE) LOG Mesa atualizada do Firebase:", mesaData);
+        "(NOBRIDGE) LOG Mesa atualizada do Firebase:", mesaData;
         setMesaAtual({ id: mesa.id, ...mesaData });
       }
     } catch (error) {
       console.error("(NOBRIDGE) ERROR Erro ao buscar mesa do Firebase:", error);
+    }
+  };
+
+  const atualizarValorRestante = async (totalGeral) => {
+    try {
+      const freshDb = await ensureFirebaseInitialized();
+      const valorPago = parseFloat(mesaAtual?.valorPago || 0);
+      const novoValorRestante = (parseFloat(totalGeral) - valorPago).toFixed(2);
+      await freshDb.ref(`mesas/${mesaAtual.id}`).update({
+        valorRestante: novoValorRestante,
+      });
+      setMesaAtual((prev) => ({
+        ...prev,
+        valorRestante: novoValorRestante,
+      }));
+      "(NOBRIDGE) LOG Valor restante atualizado:", novoValorRestante;
+    } catch (error) {
+      console.error(
+        "(NOBRIDGE) ERROR Erro ao atualizar valor restante:",
+        error
+      );
     }
   };
 
@@ -58,13 +79,15 @@ export default function DetalhesMesaModal({
         await reverterEstoquePedido(pedidoId);
       } else {
         await pedidoRef.remove();
-        console.log("(NOBRIDGE) LOG Pedido removido do Firebase:", pedidoId);
+        "(NOBRIDGE) LOG Pedido removido do Firebase:", pedidoId;
       }
 
       const novosPedidos = pedidosLocais.filter(
         (pedido) => pedido.id !== pedidoId
       );
       setPedidosLocais(novosPedidos);
+      const novoTotalGeral = calcularTotalGeral(novosPedidos);
+      await atualizarValorRestante(novoTotalGeral);
 
       Alert.alert("Sucesso", "Item removido com sucesso!");
     } catch (error) {
@@ -74,7 +97,7 @@ export default function DetalhesMesaModal({
   };
 
   useEffect(() => {
-    console.log("(NOBRIDGE) LOG Mesa recebida como prop:", mesa);
+    "(NOBRIDGE) LOG Mesa recebida como prop:", mesa;
     setMesaAtual(mesa || {});
     setPedidosLocais(pedidos || []);
 
@@ -82,37 +105,41 @@ export default function DetalhesMesaModal({
     if (visible) {
       fetchMesaAtual();
       unsubscribe = getCardapio((data) => {
-        console.log(
-          "(NOBRIDGE) LOG Cardápio recebido no DetalhesMesaModal:",
-          data
-        );
+        "(NOBRIDGE) LOG Cardápio recebido no DetalhesMesaModal:", data;
         setCardapio(data);
       });
     }
     return () => {
       if (unsubscribe) {
-        console.log(
-          "(NOBRIDGE) LOG Desmontando listener de cardápio no DetalhesMesaModal"
-        );
+        ("(NOBRIDGE) LOG Desmontando listener de cardápio no DetalhesMesaModal");
         unsubscribe();
       }
     };
   }, [visible, mesa, pedidos]);
 
+  useEffect(() => {
+    if (pedidosLocais.length) {
+      const totalGeral = calcularTotalGeral(pedidosLocais);
+      atualizarValorRestante(totalGeral);
+    }
+  }, [pedidosLocais]);
+
   const handleStatusToggle = async (pedidoId, entregueAtual) => {
     if (entregueAtual) return;
 
-    console.log("(NOBRIDGE) LOG Iniciando atualização de status para pedido:", {
-      pedidoId,
-      novoStatus: !entregueAtual,
-    });
+    "(NOBRIDGE) LOG Iniciando atualização de status para pedido:",
+      {
+        pedidoId,
+        novoStatus: !entregueAtual,
+      };
 
     try {
       await atualizarStatusPedido(pedidoId, !entregueAtual);
-      console.log("(NOBRIDGE) LOG Status atualizado com sucesso para:", {
-        pedidoId,
-        status: !entregueAtual,
-      });
+      "(NOBRIDGE) LOG Status atualizado com sucesso para:",
+        {
+          pedidoId,
+          status: !entregueAtual,
+        };
 
       const novosPedidos = pedidosLocais.map((pedido) =>
         pedido.id === pedidoId
@@ -140,22 +167,20 @@ export default function DetalhesMesaModal({
       .toFixed(2);
   };
 
-  const calcularTotalGeral = () => {
-    const pedidosValidos = Array.isArray(pedidosLocais) ? pedidosLocais : [];
+  const calcularTotalGeral = (pedidos = pedidosLocais) => {
+    const pedidosValidos = Array.isArray(pedidos) ? pedidos : [];
     if (!pedidosValidos.length) return "0.00";
     const total = pedidosValidos.reduce((acc, pedido) => {
       const pedidoTotal = calcularTotalPedido(pedido.itens);
       return acc + parseFloat(pedidoTotal);
     }, 0);
-    console.log("Calculando total geral:", { pedidos: pedidosValidos, total });
+    "(NOBRIDGE) LOG Calculando total geral:",
+      { pedidos: pedidosValidos, total };
     return total.toFixed(2);
   };
 
   const handleAtualizarMesa = (novaMesa) => {
-    console.log(
-      "(NOBRIDGE) LOG Atualizando mesaAtual com novos dados:",
-      novaMesa
-    );
+    "(NOBRIDGE) LOG Atualizando mesaAtual com novos dados:", novaMesa;
     setMesaAtual(novaMesa);
     fetchMesaAtual();
   };
@@ -245,7 +270,7 @@ export default function DetalhesMesaModal({
         visible={adicionarItensVisible}
         onClose={() => setAdicionarItensVisible(false)}
         onConfirm={(itens) => {
-          onAdicionarPedido(mesaAtual.id, itens); // Usar id em vez de numero
+          onAdicionarPedido(mesaAtual.id, itens);
           setAdicionarItensVisible(false);
         }}
         mesa={mesaAtual}

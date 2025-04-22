@@ -11,10 +11,10 @@ import {
   RefreshControl,
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-// import {
-//   getHistoricoPedidos,
-//   removerPedidoDoHistorico,
-// } from "../services/mesaService";
+import {
+  getHistoricoPedidos,
+  removerPedidoDoHistorico,
+} from "../services/mesaService";
 
 export default function HistoricoPedidosScreen() {
   const navigation = useNavigation();
@@ -45,7 +45,7 @@ export default function HistoricoPedidosScreen() {
 
       return () => {
         if (unsubscribe) {
-          console.log("Desmontando listener de histórico");
+          ("Desmontando listener de histórico");
           unsubscribe();
         }
       };

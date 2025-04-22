@@ -10,13 +10,13 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-// import {
-//   fecharMesa,
-//   enviarComandaViaWhatsApp,
-//   removerPedidosDaMesa,
-// } from "../services/mesaService";
+import {
+  fecharMesa,
+  enviarComandaViaWhatsApp,
+  removerPedidosDaMesa,
+} from "../services/mesaService";
 import * as FileSystem from "expo-file-system";
-// import { salvarHistoricoPedido } from "../services/mesaService";
+import { salvarHistoricoPedido } from "../services/mesaService";
 
 export default function FecharComandaModal({
   visible,
@@ -147,7 +147,7 @@ export default function FecharComandaModal({
         })
       );
 
-      console.log("Pedido salvo no histórico:", nomeArquivo);
+      "Pedido salvo no histórico:", nomeArquivo;
     } catch (error) {
       console.error("Erro ao salvar pedido no histórico:", error);
       throw error;
@@ -193,7 +193,7 @@ export default function FecharComandaModal({
         historicoPagamentos,
       };
 
-      console.log("Dados completos para histórico:", dadosParaHistorico);
+      "Dados completos para histórico:", dadosParaHistorico;
 
       await salvarHistoricoPedido(dadosParaHistorico);
       await removerPedidosDaMesa(mesa.id); // Usar id em vez de numero
@@ -283,10 +283,7 @@ export default function FecharComandaModal({
         historicoPagamentos,
       };
 
-      console.log(
-        "Antes de chamar fecharMesa para pagamento parcial:",
-        updates
-      );
+      "Antes de chamar fecharMesa para pagamento parcial:", updates;
       await fecharMesa(mesa.id, updates);
 
       Alert.alert(
@@ -353,8 +350,9 @@ export default function FecharComandaModal({
 
     setIsSubmitting(true);
     try {
-      const whatsappUrl = enviarComandaViaWhatsApp(
-        mesa.id, // Usar id em vez de numero
+      // Aguarda a resolução da promessa para obter a string da URL
+      const whatsappUrl = await enviarComandaViaWhatsApp(
+        mesa.id,
         pedidos,
         cardapio,
         numeroLimpo
@@ -375,7 +373,7 @@ export default function FecharComandaModal({
         "Erro",
         `Não foi possível enviar via WhatsApp: ${error.message}`
       );
-      console.error("Erro ao enviar via WhatsApp:", error);
+      console.error("(NOBRIDGE) ERROR Erro ao enviar via WhatsApp:", error);
     } finally {
       setIsSubmitting(false);
     }
