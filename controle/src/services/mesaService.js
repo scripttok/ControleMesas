@@ -1087,15 +1087,15 @@ export const enviarComandaViaWhatsApp = async (
     }
     const nomeMesa = mesa.nomeCliente || `Mesa ${mesaId}`;
 
-    let texto = `Conta da ${nomeMesa}\nItens:\n`;
+    let texto = `🍽️ Olá! Aqui está a comanda da *${nomeMesa}*! 😊\n\n📋 *Itens pedidos*:\n`;
     pedidos.forEach((pedido) => {
       if (pedido.itens && Array.isArray(pedido.itens)) {
         pedido.itens.forEach((item) => {
           const itemCardapio = cardapio.find((c) => c.nome === item.nome);
           const precoUnitario = itemCardapio ? itemCardapio.precoUnitario : 0;
-          texto += `${item.nome} x${
+          texto += `🍴 ${item.nome} (x${
             item.quantidade
-          } - R$ ${precoUnitario.toFixed(2)} cada - R$ ${(
+          }) - R$ ${precoUnitario.toFixed(2)} cada = R$ ${(
             item.quantidade * precoUnitario
           ).toFixed(2)}\n`;
         });
@@ -1113,6 +1113,10 @@ export const enviarComandaViaWhatsApp = async (
       }
       return acc;
     }, 0);
+
+    texto += `\n💰 *Total*: R$ ${total.toFixed(
+      2
+    )}\n\nObrigado por escolher a gente! 🥂 Qualquer dúvida, é só chamar! 😉`;
 
     texto += `\nTotal: R$ ${total.toFixed(2)}`;
 

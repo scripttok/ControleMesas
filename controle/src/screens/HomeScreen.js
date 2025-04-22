@@ -273,6 +273,19 @@ export default function HomeScreen() {
       "(NOBRIDGE) LOG separarMesas - Pedidos da mesa juntada:",
         pedidosMesaJunta;
 
+      // Nova validação: verificar se há pedidos sem mesaOriginal
+      const hasNovosPedidos = pedidosMesaJunta.some(
+        (pedido) => !pedido.mesaOriginal
+      );
+      if (hasNovosPedidos) {
+        ("(NOBRIDGE) LOG separarMesas - Pedidos novos detectados na mesa juntada");
+        Alert.alert(
+          "Erro",
+          "Não é possível separar mesas com pedidos feitos após a junção."
+        );
+        return;
+      }
+
       // Agrupar pedidos por mesa original
       const pedidosPorMesaOriginal = {};
       pedidosMesaJunta.forEach((pedido) => {
@@ -299,16 +312,6 @@ export default function HomeScreen() {
       const mesasOriginais = mesasOriginaisSnapshot.val() || {};
       "(NOBRIDGE) LOG separarMesas - Mesas originais recuperadas:",
         mesasOriginais;
-
-      // Verificar se há pedidos suficientes para distribuir
-      if (Object.keys(pedidosPorMesaOriginal).length < nomesClientes.length) {
-        ("(NOBRIDGE) LOG separarMesas - Pedidos insuficientes para todos os clientes");
-        Alert.alert(
-          "Erro",
-          "Não há pedidos suficientes para separar entre todos os clientes."
-        );
-        return;
-      }
 
       // Mapear nomes de clientes para IDs das mesas originais
       const nomeParaMesaOriginal = {};
@@ -376,7 +379,7 @@ export default function HomeScreen() {
           const mesaData = {
             nomeCliente: mesaOriginalData.nomeCliente?.includes(nome)
               ? nome
-              : nome, // Preserve original name if possible
+              : nome,
             posX: mesaOriginalData.posX || mesa.posX || 0,
             posY:
               (mesaOriginalData.posY || mesa.posY || 0) +
@@ -402,7 +405,7 @@ export default function HomeScreen() {
       const updates = {};
       const novasMesas = await Promise.all(
         mesasComValores.map(async (mesaData) => {
-          "(NOBRIDGE) LOG separarMesas - Processando nova mesa:", mesaData;
+          "(NOBRIDGE) LOG separarMesas - Processslimando nova mesa:", mesaData;
           const { pedidos, originalId, ...mesaProps } = mesaData;
           let newId;
 
@@ -449,7 +452,6 @@ export default function HomeScreen() {
       );
     }
   };
-
   const verPedidos = useCallback((mesa) => {
     setMesaDetalhes(mesa);
     setDetalhesVisible(true);
