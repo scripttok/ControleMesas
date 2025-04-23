@@ -45,7 +45,7 @@ export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
       return;
     }
 
-    const nomeLimpo = nomeEstoque.trim();
+    const nomeLimpo = nomeEstoque.trim().toLowerCase(); // Normalizar para minúsculas
     if (!nomeLimpo) {
       Alert.alert("Erro", "O nome do item não pode ser vazio.");
       return;
@@ -70,11 +70,11 @@ export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
         quantidade: parseInt(quantidadeEstoque, 10),
         unidade: unidadeEstoque || "unidades",
         estoqueMinimo: parseInt(estoqueMinimo, 10) || 0,
-        precoUnitario: parseFloat(precoUnitario), // Adiciona o preço aqui!
+        precoUnitario: parseFloat(precoUnitario),
         chaveCardapio: chaveUnica,
         categoria: categoria,
       };
-      await db.ref(`estoque/${nomeLimpo}`).set(itemEstoque);
+      await db.ref(`estoque/${nomeLimpo}`).set(itemEstoque); // Usar nomeLimpo como chave
       ("(NOBRIDGE) LOG Estoque adicionado com sucesso");
 
       // Adicionar ao cardápio com a descrição

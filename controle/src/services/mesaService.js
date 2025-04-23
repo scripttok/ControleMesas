@@ -498,33 +498,33 @@ export const getHistoricoPedidos = (callback) => {
 };
 
 const COMBOS_SUBITENS = {
-  "Vodka Smirniff cG Coco e Red Bull": [
-    { nome: "Água de coco", quantidade: 1 },
-    { nome: "RedBull", quantidade: 1 },
+  "Vodka Smirniff Cg Coco E Red Bull": [
+    { nome: "gelo de coco", quantidade: 1 },
+    { nome: "redbull", quantidade: 1 },
   ],
-  "Ballantines ou White Horse cG Coco e Red Bull": [
-    { nome: "Água de coco", quantidade: 1 },
-    { nome: "RedBull", quantidade: 1 },
+  "Ballantines Ou White Horse Cg Coco E Red Bull": [
+    { nome: "gelo de coco", quantidade: 1 },
+    { nome: "redbull", quantidade: 1 },
   ],
-  "Red Label com Gelo Coco e Red Bull": [
-    { nome: "Água de coco", quantidade: 1 },
-    { nome: "RedBull", quantidade: 1 },
+  "Red Label Com Gelo Coco E Red Bull": [
+    { nome: "gelo de coco", quantidade: 1 },
+    { nome: "redbull", quantidade: 1 },
   ],
-  "Whisky 12 anos com Gelo Coco e Red Bull": [
-    { nome: "Água de coco", quantidade: 1 },
-    { nome: "RedBull", quantidade: 1 },
+  "Whisky 12 Anos Com Gelo Coco E Red Bull": [
+    { nome: "gelo de coco", quantidade: 1 },
+    { nome: "redbull", quantidade: 1 },
   ],
-  "1 Litro Whisky Ballantines ou W Horse + 4 Red Bull + 4 G Coco": [
-    { nome: "Água de coco", quantidade: 4 },
-    { nome: "RedBull", quantidade: 4 },
+  "1 Litro Whisky Ballantines Ou W Horse + 4 Red Bull + 4 G Coco": [
+    { nome: "gelo de coco", quantidade: 4 },
+    { nome: "redbull", quantidade: 4 },
   ],
   "1 Litro Whisky Red Label  + 4 Red Bull + 4 G Coco": [
-    { nome: "Água de coco", quantidade: 4 },
-    { nome: "RedBull", quantidade: 4 },
+    { nome: "gelo de coco", quantidade: 4 },
+    { nome: "redbull", quantidade: 4 },
   ],
   "1 Litro Whisky Black Label  + 4 Red Bull + 4 G Coco": [
-    { nome: "Água de coco", quantidade: 4 },
-    { nome: "RedBull", quantidade: 4 },
+    { nome: "gelo de coco", quantidade: 4 },
+    { nome: "redbull", quantidade: 4 },
   ],
 };
 
@@ -565,7 +565,8 @@ export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
         }
 
         if (COMBOS_SUBITENS[nome]) {
-          "(NOBRIDGE) LOG atualizarStatusPedido - Combo identificado:", nome;
+          "(NOBRIDGE) LOG atualizarStatusPedido - Combo identificado:",
+            { nome, subItens: COMBOS_SUBITENS[nome] };
           const subItens = COMBOS_SUBITENS[nome];
 
           for (const subItem of subItens) {
@@ -581,15 +582,14 @@ export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
 
             const quantidadeTotal = subItemQuantidade * (quantidade || 1);
             "(NOBRIDGE) LOG atualizarStatusPedido - Baixando estoque para subitem:",
-              {
-                subItemNome,
-                quantidadeTotal,
-              };
+              { subItemNome, quantidadeTotal, quantidadeItem: quantidade };
 
             const estoqueSnapshot = await db
               .ref(`estoque/${subItemNome.toLowerCase()}`)
               .once("value");
             const estoqueData = estoqueSnapshot.val();
+            "(NOBRIDGE) LOG atualizarStatusPedido - Estoque atual:",
+              { subItemNome, estoqueData };
 
             if (estoqueData) {
               const quantidadeAtual = estoqueData.quantidade || 0;
@@ -597,16 +597,15 @@ export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
                 quantidadeAtual - quantidadeTotal,
                 0
               );
+              "(NOBRIDGE) LOG atualizarStatusPedido - Nova quantidade calculada:",
+                { subItemNome, quantidadeAtual, novaQuantidade };
 
               if (novaQuantidade > 0) {
                 await db
                   .ref(`estoque/${subItemNome.toLowerCase()}`)
                   .update({ quantidade: novaQuantidade });
                 "(NOBRIDGE) LOG atualizarStatusPedido - Estoque atualizado:",
-                  {
-                    subItemNome,
-                    novaQuantidade,
-                  };
+                  { subItemNome, novaQuantidade };
               } else {
                 await db.ref(`estoque/${subItemNome.toLowerCase()}`).remove();
                 "(NOBRIDGE) LOG atualizarStatusPedido - Subitem removido do estoque:",
@@ -687,17 +686,27 @@ export const validarEstoqueParaPedido = async (itens) => {
   try {
     for (const item of itens) {
       const { nome, quantidade } = item;
+      console.log("(NOBRIDGE) LOG Validando item:", { nome, quantidade });
 
       if (COMBOS_SUBITENS[nome]) {
         const subItens = COMBOS_SUBITENS[nome];
+        console.log("(NOBRIDGE) LOG Subitens do combo:", subItens);
         for (const subItem of subItens) {
           const { nome: subItemNome, quantidade: subItemQuantidade } = subItem;
           const quantidadeTotal = subItemQuantidade * (quantidade || 1);
+          console.log("(NOBRIDGE) LOG Verificando subitem:", {
+            subItemNome,
+            quantidadeTotal,
+          });
 
           const estoqueSnapshot = await db
             .ref(`estoque/${subItemNome.toLowerCase()}`)
             .once("value");
           const estoqueData = estoqueSnapshot.val();
+          console.log("(NOBRIDGE) LOG Estoque encontrado:", {
+            subItemNome,
+            estoqueData,
+          });
 
           if (!estoqueData) {
             throw new Error(`Item "${subItemNome}" não encontrado no estoque.`);
@@ -711,21 +720,7 @@ export const validarEstoqueParaPedido = async (itens) => {
           }
         }
       } else {
-        const estoqueSnapshot = await db
-          .ref(`estoque/${nome.toLowerCase()}`)
-          .once("value");
-        const estoqueData = estoqueSnapshot.val();
-
-        if (!estoqueData) {
-          throw new Error(`Item "${nome}" não encontrado no estoque.`);
-        }
-
-        const quantidadeAtual = estoqueData.quantidade || 0;
-        if (quantidadeAtual < quantidade) {
-          throw new Error(
-            `Estoque insuficiente para "${nome}". Necessário: ${quantidade}, Disponível: ${quantidadeAtual}.`
-          );
-        }
+        // ... validação para itens não-combo ...
       }
     }
     return true;

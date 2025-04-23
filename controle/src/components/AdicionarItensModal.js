@@ -126,6 +126,10 @@ export default function AdicionarItensModal({
     }
 
     try {
+      console.log(
+        "(NOBRIDGE) LOG Enviando itens para validação:",
+        itensValidos
+      );
       await validarEstoqueParaPedido(itensValidos);
       "(NOBRIDGE) LOG handleConfirmar - Estoque validado, chamando onConfirm com itens:",
         itensValidos;
@@ -133,6 +137,7 @@ export default function AdicionarItensModal({
       onClose();
       setItensSelecionados([]);
     } catch (error) {
+      console.error("(NOBRIDGE) ERROR Falha na validação de estoque:", error);
       Alert.alert("Erro", error.message);
     }
   };
