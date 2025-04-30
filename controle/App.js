@@ -14,6 +14,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import HomeScreen from "./src/screens/HomeScreen";
 import HistoricoPedidosScreen from "./src/screens/HistoricoPedidosScreen";
+import CashFlowScreen from "./src/screens/CashFlowScreen";
 
 const Drawer = createDrawerNavigator();
 
@@ -77,24 +78,24 @@ function DrawerContent({ navigation }) {
           color="#FFA500"
         />
       </View>
-      {/* <View style={{ marginVertical: 10 }}>
-        <Button
-          title="Gerenciar Fichas Técnicas"
-          onPress={() =>
-            checkPassword(() => {
-              navigation.navigate("Home", { gerenciarFichas: true });
-              navigation.closeDrawer();
-            })
-          }
-          color="#FFA500"
-        />
-      </View> */}
       <View style={{ marginVertical: 10 }}>
         <Button
           title="Histórico"
           onPress={() =>
             checkPassword(() => {
               navigation.navigate("HistoricoPedidos");
+              navigation.closeDrawer();
+            })
+          }
+          color="#FFA500"
+        />
+      </View>
+      <View style={{ marginVertical: 10 }}>
+        <Button
+          title="Controle de Caixa"
+          onPress={() =>
+            checkPassword(() => {
+              navigation.navigate("CashFlow");
               navigation.closeDrawer();
             })
           }
@@ -158,6 +159,7 @@ export default function App() {
             name="HistoricoPedidos"
             component={HistoricoPedidosScreen}
           />
+          <Drawer.Screen name="CashFlow" component={CashFlowScreen} />
         </Drawer.Navigator>
         <StatusBar style="auto" />
       </NavigationContainer>
