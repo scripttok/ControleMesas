@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+} from "react-native";
 import {
   db,
   collection,
@@ -45,6 +51,7 @@ const CashFlowScreen = ({ navigation }) => {
           setMovements(movementsData);
         } else {
           setCashFlow(null);
+          setMovements([]);
         }
         setError(null);
       } catch (error) {
@@ -76,6 +83,9 @@ const CashFlowScreen = ({ navigation }) => {
           const cashFlowData = cashFlowsSnap.docs[0].data();
           const cashFlowId = cashFlowsSnap.docs[0].id;
           setCashFlow({ id: cashFlowId, ...cashFlowData });
+          // Carregar movimentações
+          const movementsData = await getCashFlowMovements(cashFlowId);
+          setMovements(movementsData);
         }
       } catch (error) {
         console.error("Error fetching cash flow:", error);
@@ -105,6 +115,23 @@ const CashFlowScreen = ({ navigation }) => {
     setMovements([]);
   };
 
+  // Renderizar cada movimentação
+  const renderMovementItem = ({ item }) => (
+    <View style={styles.movementItem}>
+      <Text style={styles.movementText}>
+        {item.type === "entry" ? "Entrada" : "Saída"}: R${" "}
+        {item.amount.toFixed(2)}
+      </Text>
+      <Text style={styles.movementText}>
+        Método: {item.paymentMethod || "N/A"}
+      </Text>
+      <Text style={styles.movementText}>Descrição: {item.description}</Text>
+      <Text style={styles.movementText}>
+        Data: {new Date(item.date.toDate()).toLocaleString("pt-BR")}
+      </Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Controle de Fluxo de Caixa</Text>
@@ -122,6 +149,21 @@ const CashFlowScreen = ({ navigation }) => {
       ) : (
         <Text style={styles.infoText}>Nenhum caixa aberto</Text>
       )}
+
+      {cashFlow && movements.length > 0 ? (
+        <View style={styles.movementsContainer}>
+          <Text style={styles.movementsTitle}>Movimentações</Text>
+          <FlatList
+            data={movements}
+            renderItem={renderMovementItem}
+            keyExtractor={(item) => item.id}
+            style={styles.movementsList}
+          />
+        </View>
+      ) : cashFlow ? (
+        <Text style={styles.infoText}>Nenhuma movimentação registrada</Text>
+      ) : null}
+
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={[styles.button, cashFlow && styles.buttonDisabled]}
@@ -211,6 +253,28 @@ const styles = StyleSheet.create({
     color: "red",
     marginBottom: 16,
     textAlign: "center",
+  },
+  movementsContainer: {
+    flex: 1,
+    marginBottom: 16,
+  },
+  movementsTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+    color: "#5C4329",
+  },
+  movementsList: {
+    flex: 1,
+  },
+  movementItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+  },
+  movementText: {
+    fontSize: 14,
+    color: "#000",
   },
   buttonContainer: {
     flexDirection: "column",
