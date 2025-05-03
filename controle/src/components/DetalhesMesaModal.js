@@ -16,7 +16,7 @@ import {
   getCardapio,
   reverterEstoquePedido,
 } from "../services/mesaService";
-import { ensureFirebaseInitialized } from "../services/firebase";
+import { waitForFirebaseInit } from "../services/firebase";
 
 export default function DetalhesMesaModal({
   visible,
@@ -34,7 +34,7 @@ export default function DetalhesMesaModal({
   const fetchMesaAtual = async () => {
     if (!mesa?.id) return;
     try {
-      const freshDb = await ensureFirebaseInitialized();
+      const freshDb = await waitForFirebaseInit();
       const ref = freshDb.ref(`mesas/${mesa.id}`);
       const snapshot = await ref.once("value");
       const mesaData = snapshot.val();
@@ -49,7 +49,7 @@ export default function DetalhesMesaModal({
 
   const atualizarValorRestante = async (totalGeral) => {
     try {
-      const freshDb = await ensureFirebaseInitialized();
+      const freshDb = await waitForFirebaseInit();
       const valorPago = parseFloat(mesaAtual?.valorPago || 0);
       const novoValorRestante = (parseFloat(totalGeral) - valorPago).toFixed(2);
       await freshDb.ref(`mesas/${mesaAtual.id}`).update({
@@ -70,7 +70,7 @@ export default function DetalhesMesaModal({
 
   const handleRemoverItem = async (pedidoId, entregue) => {
     try {
-      const freshDb = await ensureFirebaseInitialized();
+      const freshDb = await waitForFirebaseInit();
       const pedidoRef = freshDb.ref(`pedidos/${pedidoId}`);
       const pedidoSnapshot = await pedidoRef.once("value");
       const pedido = pedidoSnapshot.val();

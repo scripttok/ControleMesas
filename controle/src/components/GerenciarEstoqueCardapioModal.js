@@ -14,7 +14,7 @@ import {
   adicionarNovoItemEstoque,
   adicionarNovoItemCardapio,
 } from "../services/mesaService";
-import { ensureFirebaseInitialized } from "../services/firebase";
+import { waitForFirebaseInit } from "../services/firebase";
 
 export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
   // Campos unificados para estoque e cardápio
@@ -64,7 +64,7 @@ export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
       const chaveUnica = `${categoria.slice(0, 3)}${Date.now()}`;
 
       // Adicionar ao estoque com categoria e preço
-      const db = await ensureFirebaseInitialized();
+      const db = await waitForFirebaseInit();
       const itemEstoque = {
         nome: nomeLimpo,
         quantidade: parseInt(quantidadeEstoque, 10),

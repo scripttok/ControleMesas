@@ -30,11 +30,9 @@ const CashFlowScreen = ({ navigation }) => {
   const [closeModalVisible, setCloseModalVisible] = useState(false);
   const [reportModalVisible, setReportModalVisible] = useState(false);
 
-  // Carregar o caixa atual (se houver)
   useEffect(() => {
     const fetchCashFlow = async () => {
       try {
-        // Buscar o último caixa aberto
         const cashFlowsQuery = query(
           collection(db, "cash_flow"),
           where("status", "==", "open"),
@@ -46,7 +44,6 @@ const CashFlowScreen = ({ navigation }) => {
           const cashFlowData = cashFlowsSnap.docs[0].data();
           const cashFlowId = cashFlowsSnap.docs[0].id;
           setCashFlow({ id: cashFlowId, ...cashFlowData });
-          // Carregar movimentações
           const movementsData = await getCashFlowMovements(cashFlowId);
           setMovements(movementsData);
         } else {
@@ -69,7 +66,6 @@ const CashFlowScreen = ({ navigation }) => {
       openAmount: 0,
       status: "open",
     });
-    // Recarregar o caixa
     const fetchCashFlow = async () => {
       try {
         const cashFlowsQuery = query(
@@ -83,7 +79,6 @@ const CashFlowScreen = ({ navigation }) => {
           const cashFlowData = cashFlowsSnap.docs[0].data();
           const cashFlowId = cashFlowsSnap.docs[0].id;
           setCashFlow({ id: cashFlowId, ...cashFlowData });
-          // Carregar movimentações
           const movementsData = await getCashFlowMovements(cashFlowId);
           setMovements(movementsData);
         }
@@ -96,7 +91,6 @@ const CashFlowScreen = ({ navigation }) => {
   };
 
   const handleMovementSuccess = () => {
-    // Recarregar movimentações
     const fetchMovements = async () => {
       if (cashFlow) {
         try {
@@ -115,7 +109,6 @@ const CashFlowScreen = ({ navigation }) => {
     setMovements([]);
   };
 
-  // Renderizar cada movimentação
   const renderMovementItem = ({ item }) => (
     <View style={styles.movementItem}>
       <Text style={styles.movementText}>
@@ -127,7 +120,7 @@ const CashFlowScreen = ({ navigation }) => {
       </Text>
       <Text style={styles.movementText}>Descrição: {item.description}</Text>
       <Text style={styles.movementText}>
-        Data: {new Date(item.date.toDate()).toLocaleString("pt-BR")}
+        Data: {new Date(item.date).toLocaleString("pt-BR")}
       </Text>
     </View>
   );

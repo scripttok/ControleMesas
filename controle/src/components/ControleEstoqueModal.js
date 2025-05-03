@@ -15,10 +15,10 @@ import {
   getEstoque,
   removerItemEstoqueECardapio,
 } from "../services/mesaService";
-import { ensureFirebaseInitialized } from "../services/firebase";
+import { waitForFirebaseInit } from "../services/firebase";
 
 async function atualizarItemEstoque(nomeItem, novosDados, categoria) {
-  const db = await ensureFirebaseInitialized();
+  const db = await waitForFirebaseInit();
   await db.ref(`estoque/${nomeItem}`).update(novosDados);
   if (categoria) {
     await db.ref(`cardapio/${categoria}/${nomeItem}`).update({
@@ -153,7 +153,7 @@ export default function ControleEstoqueModal({ visible, onClose }) {
     showConfirmModal(mensagem, async () => {
       try {
         if (!categoriaItem) {
-          const db = await ensureFirebaseInitialized();
+          const db = await waitForFirebaseInit();
           await db.ref(`estoque/${itemId}`).remove();
           Alert.alert("Sucesso", `${nome} removido do estoque`);
         } else {

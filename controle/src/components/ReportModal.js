@@ -8,12 +8,19 @@ import {
   StyleSheet,
   FlatList,
 } from "react-native";
-import { getCashFlowReport } from "../services/firebase";
+import {
+  getCashFlowReport,
+  getCashFlowMovementsReport,
+} from "../services/firebase";
+import { Picker } from "@react-native-picker/picker";
 
 const ReportModal = ({ visible, onClose }) => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState("");
   const [report, setReport] = useState(null);
+  const [movementsReport, setMovementsReport] = useState(null);
   const [error, setError] = useState("");
 
   const handleGenerateReport = async () => {
@@ -29,8 +36,15 @@ const ReportModal = ({ visible, onClose }) => {
         setError("A data inicial deve ser anterior à data final.");
         return;
       }
-      const reportData = await getCashFlowReport(start, end);
-      setReport(reportData);
+      const cashFlowReport = await getCashFlowReport(start, end);
+      const movementsReport = await getCashFlowMovementsReport(
+        start,
+        end,
+        typeFilter || null,
+        paymentMethodFilter || null
+      );
+      setReport(cashFlowReport);
+      setMovementsReport(movementsReport);
     } catch (err) {
       setError("Erro ao gerar relatório. Tente novamente.");
       console.error("Error generating report:", err);
@@ -45,7 +59,21 @@ const ReportModal = ({ visible, onClose }) => {
         Valor Inicial: R$ {item.openAmount.toFixed(2)}
       </Text>
       <Text style={styles.cashFlowText}>
-        Valor Final: R$ {item.closeAmount.toFixed(2)}
+        Valor Final: R$ {item.closeAmount?.toFixed(2) || "N/A"}
+      </Text>
+    </View>
+  );
+
+  const renderMovementItem = ({ item }) => (
+    <View style={styles.movementItem}>
+      <Text style={styles.itemText}>
+        {item.type === "entry" ? "Entrada" : "Saída"}: R${" "}
+        {item.amount.toFixed(2)}
+      </Text>
+      <Text style={styles.itemText}>Método: {item.paymentMethod || "N/A"}</Text>
+      <Text style={styles.itemText}>Descrição: {item.description}</Text>
+      <Text style={styles.itemText}>
+        Data: {new Date(item.date).toLocaleString("pt-BR")} {/* Correção */}
       </Text>
     </View>
   );
@@ -70,28 +98,64 @@ const ReportModal = ({ visible, onClose }) => {
             onChangeText={setEndDate}
             placeholderTextColor="#888"
           />
+          <Picker
+            selectedValue={typeFilter}
+            style={styles.picker}
+            onValueChange={(value) => setTypeFilter(value)}
+          >
+            <Picker.Item label="Todos os Tipos" value="" />
+            <Picker.Item label="Entrada" value="entry" />
+            <Picker.Item label="Saída" value="exit" />
+          </Picker>
+          <Picker
+            selectedValue={paymentMethodFilter}
+            style={styles.picker}
+            onValueChange={(value) => setPaymentMethodFilter(value)}
+          >
+            <Picker.Item label="Todos os Métodos" value="" />
+            <Picker.Item label="Dinheiro" value="cash" />
+            <Picker.Item label="Cartão" value="card" />
+            <Picker.Item label="Pix" value="pix" />
+          </Picker>
           <Button
             title="Gerar Relatório"
             onPress={handleGenerateReport}
             color="#FFA500"
           />
-          {report && (
+          {report && movementsReport && (
             <View style={styles.reportContainer}>
               <Text style={styles.reportTitle}>Resumo do Relatório</Text>
               <Text style={styles.reportText}>
-                Total em Dinheiro: R$ {report.totalCash.toFixed(2)}
+                Total Entradas: R$ {movementsReport.totalEntries.toFixed(2)}
               </Text>
               <Text style={styles.reportText}>
-                Total em Cartão: R$ {report.totalCard.toFixed(2)}
+                Total Saídas: R$ {movementsReport.totalExits.toFixed(2)}
               </Text>
               <Text style={styles.reportText}>
-                Total em Pix: R$ {report.totalPix.toFixed(2)}
+                Saldo: R$ {movementsReport.balance.toFixed(2)}
               </Text>
+              <Text style={styles.reportText}>
+                Total em Dinheiro: R$ {movementsReport.totalCash.toFixed(2)}
+              </Text>
+              <Text style={styles.reportText}>
+                Total em Cartão: R$ {movementsReport.totalCard.toFixed(2)}
+              </Text>
+              <Text style={styles.reportText}>
+                Total em Pix: R$ {movementsReport.totalPix.toFixed(2)}
+              </Text>
+              <Text style={styles.reportTitle}>Caixas</Text>
               <FlatList
                 data={report.cashFlows}
                 renderItem={renderCashFlowItem}
                 keyExtractor={(item) => item.id}
                 style={styles.cashFlowList}
+              />
+              <Text style={styles.reportTitle}>Movimentações</Text>
+              <FlatList
+                data={movementsReport.movements}
+                renderItem={renderMovementItem}
+                keyExtractor={(item) => item.id}
+                style={styles.movementsList}
               />
             </View>
           )}
@@ -132,6 +196,11 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     color: "#000",
   },
+  picker: {
+    width: "100%",
+    height: 40,
+    marginBottom: 15,
+  },
   errorText: {
     color: "red",
     marginBottom: 10,
@@ -145,6 +214,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 10,
+    marginTop: 10,
     color: "#5C4329",
   },
   reportText: {
@@ -153,8 +223,8 @@ const styles = StyleSheet.create({
     color: "#000",
   },
   cashFlowList: {
-    maxHeight: 200,
-    marginTop: 10,
+    maxHeight: 150,
+    marginBottom: 10,
   },
   cashFlowItem: {
     padding: 10,
@@ -162,6 +232,18 @@ const styles = StyleSheet.create({
     borderBottomColor: "#ccc",
   },
   cashFlowText: {
+    fontSize: 14,
+    color: "#000",
+  },
+  movementsList: {
+    maxHeight: 150,
+  },
+  movementItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+  },
+  movementText: {
     fontSize: 14,
     color: "#000",
   },

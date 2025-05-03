@@ -34,7 +34,7 @@ import {
   removerMesa,
   removerPedidosDaMesa,
 } from "../services/mesaService";
-import { ensureFirebaseInitialized } from "../services/firebase";
+import { waitForFirebaseInit } from "../services/firebase";
 
 export default function HomeScreen() {
   const [searchText, setSearchText] = useState("");
@@ -83,7 +83,7 @@ export default function HomeScreen() {
 
   const setupListeners = useCallback(async () => {
     try {
-      await ensureFirebaseInitialized();
+      await waitForFirebaseInit();
       if (unsubscribeRefs.current.mesas) unsubscribeRefs.current.mesas();
       if (unsubscribeRefs.current.pedidos) unsubscribeRefs.current.pedidos();
       if (unsubscribeRefs.current.estoque) unsubscribeRefs.current.estoque();
@@ -261,7 +261,7 @@ export default function HomeScreen() {
 
     try {
       ("(NOBRIDGE) LOG separarMesas - Inicializando Firebase");
-      const freshDb = await ensureFirebaseInitialized();
+      const freshDb = await waitForFirebaseInit();
       ("(NOBRIDGE) LOG separarMesas - Buscando pedidos");
       const pedidosSnapshot = await freshDb.ref("pedidos").once("value");
       const todosPedidos = pedidosSnapshot.val() || {};

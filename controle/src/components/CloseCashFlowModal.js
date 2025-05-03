@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, Button, Modal, StyleSheet } from "react-native";
+import { db, doc, getDoc } from "../services/firebase";
 import { closeCashFlow } from "../services/firebase";
 
 const CloseCashFlowModal = ({ visible, onClose, cashFlowId, onSuccess }) => {
@@ -9,6 +10,40 @@ const CloseCashFlowModal = ({ visible, onClose, cashFlowId, onSuccess }) => {
   const [pixPayments, setPixPayments] = useState("");
   const [observations, setObservations] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchCashFlowData = async () => {
+      if (visible && cashFlowId) {
+        try {
+          const cashFlowRef = doc(db, "cash_flow", cashFlowId);
+          const cashFlowSnap = await getDoc(cashFlowRef);
+          if (cashFlowSnap.exists()) {
+            const data = cashFlowSnap.data();
+            console.log("Dados do caixa:", data);
+            setCloseAmount(
+              data.closeAmount?.toString().replace(".", ",") || ""
+            );
+            setCashPayments(
+              data.cashPayments?.toString().replace(".", ",") || ""
+            );
+            setCardPayments(
+              data.cardPayments?.toString().replace(".", ",") || ""
+            );
+            setPixPayments(
+              data.pixPayments?.toString().replace(".", ",") || ""
+            );
+            setObservations(data.observations || "");
+          } else {
+            setError("Caixa não encontrado.");
+          }
+        } catch (error) {
+          console.error("Erro ao carregar dados do caixa:", error);
+          setError("Erro ao carregar os dados do caixa.");
+        }
+      }
+    };
+    fetchCashFlowData();
+  }, [visible, cashFlowId]);
 
   const handleSubmit = async () => {
     try {
