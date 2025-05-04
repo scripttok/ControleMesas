@@ -7,12 +7,15 @@ import {
   Modal,
   StyleSheet,
   FlatList,
+  Alert,
 } from "react-native";
 import {
   getCashFlowReport,
   getCashFlowMovementsReport,
 } from "../services/firebase";
 import { Picker } from "@react-native-picker/picker";
+import * as FileSystem from "expo-file-system";
+import * as Sharing from "expo-sharing";
 
 const ReportModal = ({ visible, onClose }) => {
   const [startDate, setStartDate] = useState("");
@@ -26,14 +29,12 @@ const ReportModal = ({ visible, onClose }) => {
   const handleGenerateReport = async () => {
     try {
       setError("");
-      // Validar formato YYYY-MM-DD
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
         setError("Insira datas no formato YYYY-MM-DD.");
         return;
       }
 
-      // Criar objetos Date assumindo UTC-3
       const start = new Date(`${startDate}T00:00:00.000-03:00`);
       const end = new Date(`${endDate}T23:59:59.999-03:00`);
       console.log("Datas enviadas:", {
@@ -64,6 +65,116 @@ const ReportModal = ({ visible, onClose }) => {
     } catch (err) {
       setError("Erro ao gerar relatório: " + err.message);
       console.error("Error generating report:", err);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    if (!report || !movementsReport) {
+      Alert.alert("Erro", "Gere um relatório antes de exportar.");
+      return;
+    }
+
+    try {
+      // Formatar cabeçalhos e dados do CSV
+      const csvRows = [];
+
+      // Seção de Caixas
+      csvRows.push("Relatório de Caixas");
+      csvRows.push(
+        "ID,Operador,Data Abertura,Status,Valor Inicial,Valor Final,Dinheiro,Cartão,Pix,Observações"
+      );
+      report.cashFlows.forEach((cashFlow) => {
+        csvRows.push(
+          [
+            cashFlow.id,
+            cashFlow.operatorName,
+            new Date(cashFlow.openDate).toLocaleString("pt-BR"),
+            cashFlow.status,
+            cashFlow.openAmount.toFixed(2),
+            cashFlow.closeAmount?.toFixed(2) || "N/A",
+            cashFlow.cashPayments.toFixed(2),
+            cashFlow.cardPayments.toFixed(2),
+            cashFlow.pixPayments.toFixed(2),
+            cashFlow.observations || "",
+          ]
+            .map((val) => `"${val}"`)
+            .join(",")
+        );
+      });
+
+      // Totais de Caixas
+      csvRows.push("");
+      csvRows.push("Totais de Caixas");
+      csvRows.push(
+        `Total Dinheiro,${report.totalCash.toFixed(2)}`,
+        `Total Cartão,${report.totalCard.toFixed(2)}`,
+        `Total Pix,${report.totalPix.toFixed(2)}`
+      );
+
+      // Seção de Movimentações
+      csvRows.push("");
+      csvRows.push("Relatório de Movimentações");
+      csvRows.push("ID,Caixa ID,Tipo,Valor,Método de Pagamento,Descrição,Data");
+      movementsReport.movements.forEach((movement) => {
+        csvRows.push(
+          [
+            movement.id,
+            movement.cashFlowId,
+            movement.type === "entry" ? "Entrada" : "Saída",
+            movement.amount.toFixed(2),
+            movement.paymentMethod || "N/A",
+            movement.description,
+            new Date(movement.date).toLocaleString("pt-BR"),
+          ]
+            .map((val) => `"${val}"`)
+            .join(",")
+        );
+      });
+
+      // Totais de Movimentações
+      csvRows.push("");
+      csvRows.push("Totais de Movimentações");
+      csvRows.push(
+        `Total Entradas,${movementsReport.totalEntries.toFixed(2)}`,
+        `Total Saídas,${movementsReport.totalExits.toFixed(2)}`,
+        `Saldo,${movementsReport.balance.toFixed(2)}`,
+        `Total Dinheiro,${movementsReport.totalCash.toFixed(2)}`,
+        `Total Cartão,${movementsReport.totalCard.toFixed(2)}`,
+        `Total Pix,${movementsReport.totalPix.toFixed(2)}`
+      );
+
+      // Gerar conteúdo do CSV
+      const csvContent = csvRows.join("\n");
+
+      // Definir caminho do arquivo
+      const fileName = `Relatorio_${startDate}_${endDate}.csv`;
+      const filePath = `${FileSystem.documentDirectory}${fileName}`;
+
+      // Escrever arquivo
+      await FileSystem.writeAsStringAsync(filePath, csvContent, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+
+      // Verificar se o compartilhamento está disponível
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert(
+          "Erro",
+          "Compartilhamento não disponível neste dispositivo."
+        );
+        return;
+      }
+
+      // Compartilhar arquivo
+      await Sharing.shareAsync(filePath, {
+        mimeType: "text/csv",
+        dialogTitle: "Compartilhar Relatório Financeiro",
+        UTI: "public.comma-separated-values-text",
+      });
+
+      Alert.alert("Sucesso", `Relatório exportado como ${fileName}`);
+    } catch (error) {
+      console.error("Erro ao exportar CSV:", error);
+      Alert.alert("Erro", "Falha ao exportar o relatório: " + error.message);
     }
   };
 
@@ -159,6 +270,11 @@ const ReportModal = ({ visible, onClose }) => {
               <Text style={styles.reportText}>
                 Total em Pix: R$ {movementsReport.totalPix.toFixed(2)}
               </Text>
+              <Button
+                title="Exportar como CSV"
+                onPress={handleExportCSV}
+                color="#4CAF50"
+              />
               <Text style={styles.reportTitle}>Caixas</Text>
               <FlatList
                 data={report.cashFlows}

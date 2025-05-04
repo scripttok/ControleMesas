@@ -59,6 +59,7 @@ const firebaseConfig = {
 //   appId: "1:525946263891:android:804c41528d531c2b2c29a6",
 // };
 // Inicializa o Firebase para Firestore
+
 let firebaseInitialized = false;
 let auth, database, db;
 
@@ -284,7 +285,7 @@ async function getCashFlowReport(startDate, endDate) {
     cashFlows.forEach((cashFlow) => {
       if (cashFlow.status === "closed") {
         totalCash += Number(cashFlow.cashPayments) || 0;
-        totalCard += Number(cashFlow.cashPayments) || 0;
+        totalCard += Number(cashFlow.cardPayments) || 0; // Corrigido
         totalPix += Number(cashFlow.pixPayments) || 0;
       }
     });
