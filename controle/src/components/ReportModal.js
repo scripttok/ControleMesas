@@ -26,8 +26,23 @@ const ReportModal = ({ visible, onClose }) => {
   const handleGenerateReport = async () => {
     try {
       setError("");
-      const start = new Date(startDate);
-      const end = new Date(endDate);
+      // Validar formato YYYY-MM-DD
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
+        setError("Insira datas no formato YYYY-MM-DD.");
+        return;
+      }
+
+      // Criar objetos Date assumindo UTC-3
+      const start = new Date(`${startDate}T00:00:00.000-03:00`);
+      const end = new Date(`${endDate}T23:59:59.999-03:00`);
+      console.log("Datas enviadas:", {
+        startDate,
+        endDate,
+        start: start.toISOString(),
+        end: end.toISOString(),
+      });
+
       if (isNaN(start.getTime()) || isNaN(end.getTime())) {
         setError("Por favor, insira datas válidas (YYYY-MM-DD).");
         return;
@@ -36,6 +51,7 @@ const ReportModal = ({ visible, onClose }) => {
         setError("A data inicial deve ser anterior à data final.");
         return;
       }
+
       const cashFlowReport = await getCashFlowReport(start, end);
       const movementsReport = await getCashFlowMovementsReport(
         start,
@@ -46,7 +62,7 @@ const ReportModal = ({ visible, onClose }) => {
       setReport(cashFlowReport);
       setMovementsReport(movementsReport);
     } catch (err) {
-      setError("Erro ao gerar relatório. Tente novamente.");
+      setError("Erro ao gerar relatório: " + err.message);
       console.error("Error generating report:", err);
     }
   };
@@ -73,7 +89,7 @@ const ReportModal = ({ visible, onClose }) => {
       <Text style={styles.itemText}>Método: {item.paymentMethod || "N/A"}</Text>
       <Text style={styles.itemText}>Descrição: {item.description}</Text>
       <Text style={styles.itemText}>
-        Data: {new Date(item.date).toLocaleString("pt-BR")} {/* Correção */}
+        Data: {new Date(item.date).toLocaleString("pt-BR")}
       </Text>
     </View>
   );
@@ -243,7 +259,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#ccc",
   },
-  movementText: {
+  itemText: {
     fontSize: 14,
     color: "#000",
   },

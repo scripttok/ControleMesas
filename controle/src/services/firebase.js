@@ -106,7 +106,6 @@ const waitForFirebaseInit = () => {
   });
 };
 
-// Funções de cash flow (mantidas do artefato original)
 async function openCashFlow(operatorName, openAmount) {
   await waitForFirebaseInit();
   try {
@@ -133,6 +132,13 @@ async function addCashFlowMovement(
 ) {
   await waitForFirebaseInit();
   try {
+    console.log("Registrando movimentação:", {
+      cashFlowId,
+      type,
+      amount,
+      paymentMethod,
+      description,
+    });
     const movementRef = await addDoc(collection(db, "cash_flow_movements"), {
       cashFlowId,
       type,
@@ -212,18 +218,15 @@ async function getCashFlowMovements(cashFlowId) {
 async function getCashFlowReport(startDate, endDate) {
   await waitForFirebaseInit();
   try {
-    // Validar e converter startDate e endDate para objetos Date
     const start = new Date(startDate);
     const end = new Date(endDate);
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       throw new Error("Invalid startDate or endDate");
     }
 
-    // Definir início e fim do dia em UTC-3
     start.setHours(0, 0, 0, 0);
     end.setHours(23, 59, 59, 999);
 
-    // Converter para UTC (UTC-3 para UTC: adicionar 3 horas)
     const startUTC = new Date(start.getTime() + 3 * 60 * 60 * 1000);
     const endUTC = new Date(end.getTime() + 3 * 60 * 60 * 1000);
 
@@ -281,7 +284,7 @@ async function getCashFlowReport(startDate, endDate) {
     cashFlows.forEach((cashFlow) => {
       if (cashFlow.status === "closed") {
         totalCash += Number(cashFlow.cashPayments) || 0;
-        totalCard += Number(cashFlow.cardPayments) || 0;
+        totalCard += Number(cashFlow.cashPayments) || 0;
         totalPix += Number(cashFlow.pixPayments) || 0;
       }
     });
@@ -308,18 +311,15 @@ async function getCashFlowMovementsReport(
 ) {
   await waitForFirebaseInit();
   try {
-    // Validar e converter startDate e endDate para objetos Date
     const start = new Date(startDate);
     const end = new Date(endDate);
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       throw new Error("Invalid startDate or endDate");
     }
 
-    // Definir início e fim do dia em UTC-3
     start.setHours(0, 0, 0, 0);
     end.setHours(23, 59, 59, 999);
 
-    // Converter para UTC (UTC-3 para UTC: adicionar 3 horas)
     const startUTC = new Date(start.getTime() + 3 * 60 * 60 * 1000);
     const endUTC = new Date(end.getTime() + 3 * 60 * 60 * 1000);
 
