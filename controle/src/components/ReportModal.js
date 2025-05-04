@@ -8,6 +8,8 @@ import {
   StyleSheet,
   FlatList,
   Alert,
+  ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import {
   getCashFlowReport,
@@ -16,6 +18,7 @@ import {
 import { Picker } from "@react-native-picker/picker";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
+import * as Print from "expo-print";
 
 const ReportModal = ({ visible, onClose }) => {
   const [startDate, setStartDate] = useState("");
@@ -25,10 +28,12 @@ const ReportModal = ({ visible, onClose }) => {
   const [report, setReport] = useState(null);
   const [movementsReport, setMovementsReport] = useState(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleGenerateReport = async () => {
     try {
       setError("");
+      setLoading(true);
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
         setError("Insira datas no formato YYYY-MM-DD.");
@@ -65,6 +70,8 @@ const ReportModal = ({ visible, onClose }) => {
     } catch (err) {
       setError("Erro ao gerar relatório: " + err.message);
       console.error("Error generating report:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,10 +82,7 @@ const ReportModal = ({ visible, onClose }) => {
     }
 
     try {
-      // Formatar cabeçalhos e dados do CSV
       const csvRows = [];
-
-      // Seção de Caixas
       csvRows.push("Relatório de Caixas");
       csvRows.push(
         "ID,Operador,Data Abertura,Status,Valor Inicial,Valor Final,Dinheiro,Cartão,Pix,Observações"
@@ -102,7 +106,6 @@ const ReportModal = ({ visible, onClose }) => {
         );
       });
 
-      // Totais de Caixas
       csvRows.push("");
       csvRows.push("Totais de Caixas");
       csvRows.push(
@@ -111,7 +114,6 @@ const ReportModal = ({ visible, onClose }) => {
         `Total Pix,${report.totalPix.toFixed(2)}`
       );
 
-      // Seção de Movimentações
       csvRows.push("");
       csvRows.push("Relatório de Movimentações");
       csvRows.push("ID,Caixa ID,Tipo,Valor,Método de Pagamento,Descrição,Data");
@@ -131,7 +133,6 @@ const ReportModal = ({ visible, onClose }) => {
         );
       });
 
-      // Totais de Movimentações
       csvRows.push("");
       csvRows.push("Totais de Movimentações");
       csvRows.push(
@@ -143,19 +144,14 @@ const ReportModal = ({ visible, onClose }) => {
         `Total Pix,${movementsReport.totalPix.toFixed(2)}`
       );
 
-      // Gerar conteúdo do CSV
       const csvContent = csvRows.join("\n");
-
-      // Definir caminho do arquivo
       const fileName = `Relatorio_${startDate}_${endDate}.csv`;
       const filePath = `${FileSystem.documentDirectory}${fileName}`;
 
-      // Escrever arquivo
       await FileSystem.writeAsStringAsync(filePath, csvContent, {
         encoding: FileSystem.EncodingType.UTF8,
       });
 
-      // Verificar se o compartilhamento está disponível
       if (!(await Sharing.isAvailableAsync())) {
         Alert.alert(
           "Erro",
@@ -164,7 +160,6 @@ const ReportModal = ({ visible, onClose }) => {
         return;
       }
 
-      // Compartilhar arquivo
       await Sharing.shareAsync(filePath, {
         mimeType: "text/csv",
         dialogTitle: "Compartilhar Relatório Financeiro",
@@ -175,6 +170,131 @@ const ReportModal = ({ visible, onClose }) => {
     } catch (error) {
       console.error("Erro ao exportar CSV:", error);
       Alert.alert("Erro", "Falha ao exportar o relatório: " + error.message);
+    }
+  };
+
+  const handlePrintReport = async () => {
+    if (!report || !movementsReport) {
+      Alert.alert("Erro", "Gere um relatório antes de imprimir.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Generate HTML for printing
+      const htmlContent = `
+        <html>
+          <head>
+            <style>
+              body { font-family: monospace; font-size: 12px; width: 80mm; }
+              h1 { font-size: 16px; text-align: center; }
+              h2 { font-size: 14px; margin-top: 10px; }
+              p { margin: 5px 0; }
+              .section { margin-bottom: 10px; }
+              .line { border-bottom: 1px dashed #000; margin: 5px 0; }
+              .row { display: flex; justify-content: space-between; }
+            </style>
+          </head>
+          <body>
+            <h1>Relatório Financeiro</h1>
+            <div class="section">
+              <h2>Resumo</h2>
+              <p>Total Entradas: R$ ${movementsReport.totalEntries.toFixed(
+                2
+              )}</p>
+              <p>Total Saídas: R$ ${movementsReport.totalExits.toFixed(2)}</p>
+              <p>Saldo: R$ ${movementsReport.balance.toFixed(2)}</p>
+              <p>Total Dinheiro: R$ ${movementsReport.totalCash.toFixed(2)}</p>
+              <p>Total Cartão: R$ ${movementsReport.totalCard.toFixed(2)}</p>
+              <p>Total Pix: R$ ${movementsReport.totalPix.toFixed(2)}</p>
+            </div>
+            <div class="line"></div>
+            <div class="section">
+              <h2>Caixas</h2>
+              ${report.cashFlows
+                .map(
+                  (item) => `
+                    <div class="row">
+                      <p>ID: ${item.id}</p>
+                      <p>Operador: ${item.operatorName}</p>
+                    </div>
+                    <p>Valor Inicial: R$ ${item.openAmount.toFixed(2)}</p>
+                    <p>Valor Final: R$ ${
+                      item.closeAmount?.toFixed(2) || "N/A"
+                    }</p>
+                  `
+                )
+                .join("<div class='line'></div>")}
+            </div>
+            <div class="line"></div>
+            <div class="section">
+              <h2>Movimentações</h2>
+              ${movementsReport.movements
+                .map(
+                  (item) => `
+                    <div class="row">
+                      <p>${
+                        item.type === "entry" ? "Entrada" : "Saída"
+                      }: R$ ${item.amount.toFixed(2)}</p>
+                      <p>Método: ${item.paymentMethod || "N/A"}</p>
+                    </div>
+                    <p>Descrição: ${item.description}</p>
+                    <p>Data: ${new Date(item.date).toLocaleString("pt-BR")}</p>
+                  `
+                )
+                .join("<div class='line'></div>")}
+            </div>
+          </body>
+        </html>
+      `;
+
+      // Generate PDF
+      const { uri } = await Print.printToFileAsync({
+        html: htmlContent,
+        width: 576, // 80mm at 72dpi (standard for thermal printers)
+      });
+
+      // Save to cache directory
+      const fileName = `Relatorio_${startDate}_${endDate}.pdf`;
+      const printFolder = `${FileSystem.cacheDirectory}auto_print/`;
+      const filePath = `${printFolder}${fileName}`;
+
+      // Ensure the auto_print folder exists
+      await FileSystem.makeDirectoryAsync(printFolder, { intermediates: true });
+
+      // Move the PDF to the auto_print folder
+      await FileSystem.moveAsync({
+        from: uri,
+        to: filePath,
+      });
+
+      // Share the PDF with RawBT Print Service
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert(
+          "Erro",
+          "Compartilhamento não disponível neste dispositivo."
+        );
+        return;
+      }
+
+      await Sharing.shareAsync(filePath, {
+        mimeType: "application/pdf",
+        dialogTitle: "Imprimir Relatório",
+      });
+
+      Alert.alert(
+        "Sucesso",
+        `Relatório gerado. Selecione RawBT Print Service para imprimir.`
+      );
+    } catch (error) {
+      console.error("Erro ao imprimir relatório:", error);
+      Alert.alert(
+        "Erro",
+        "Falha ao gerar o relatório para impressão: " + error.message
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -205,93 +325,134 @@ const ReportModal = ({ visible, onClose }) => {
     </View>
   );
 
+  const renderModalContent = () => (
+    <View style={styles.contentContainer}>
+      <Text style={styles.modalTitle}>Gerar Relatório</Text>
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {loading && <ActivityIndicator size="large" color="#FFA500" />}
+
+      <Text style={styles.label}>Data Inicial (YYYY-MM-DD)</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Ex: 2025-05-04"
+        value={startDate}
+        onChangeText={setStartDate}
+        placeholderTextColor="#888"
+      />
+      <Text style={styles.label}>Data Final (YYYY-MM-DD)</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Ex: 2025-05-04"
+        value={endDate}
+        onChangeText={setEndDate}
+        placeholderTextColor="#888"
+      />
+
+      <Text style={styles.label}>Tipo de Movimentação</Text>
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={typeFilter}
+          style={styles.picker}
+          onValueChange={(value) => setTypeFilter(value)}
+        >
+          <Picker.Item label="Todos os Tipos" value="" />
+          <Picker.Item label="Entrada" value="entry" />
+          <Picker.Item label="Saída" value="exit" />
+        </Picker>
+      </View>
+
+      <Text style={styles.label}>Método de Pagamento</Text>
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={paymentMethodFilter}
+          style={styles.picker}
+          onValueChange={(value) => setPaymentMethodFilter(value)}
+        >
+          <Picker.Item label="Todos os Métodos" value="" />
+          <Picker.Item label="Dinheiro" value="cash" />
+          <Picker.Item label="Cartão" value="card" />
+          <Picker.Item label="Pix" value="pix" />
+        </Picker>
+      </View>
+
+      <TouchableOpacity
+        style={[styles.button, styles.generateButton]}
+        onPress={handleGenerateReport}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? "Gerando..." : "Gerar Relatório"}
+        </Text>
+      </TouchableOpacity>
+
+      {report && movementsReport && (
+        <View style={styles.reportContainer}>
+          <Text style={styles.reportTitle}>Resumo do Relatório</Text>
+          <Text style={styles.reportText}>
+            Total Entradas: R$ {movementsReport.totalEntries.toFixed(2)}
+          </Text>
+          <Text style={styles.reportText}>
+            Total Saídas: R$ {movementsReport.totalExits.toFixed(2)}
+          </Text>
+          <Text style={styles.reportText}>
+            Saldo: R$ {movementsReport.balance.toFixed(2)}
+          </Text>
+          <Text style={styles.reportText}>
+            Total em Dinheiro: R$ {movementsReport.totalCash.toFixed(2)}
+          </Text>
+          <Text style={styles.reportText}>
+            Total em Cartão: R$ {movementsReport.totalCard.toFixed(2)}
+          </Text>
+          <Text style={styles.reportText}>
+            Total em Pix: R$ {movementsReport.totalPix.toFixed(2)}
+          </Text>
+
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={[styles.button, styles.exportButton, styles.buttonHalf]}
+              onPress={handleExportCSV}
+            >
+              <Text style={styles.buttonText}>Exportar como CSV</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.printButton, styles.buttonHalf]}
+              onPress={handlePrintReport}
+            >
+              <Text style={styles.buttonText}>Imprimir</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.reportTitle}>Caixas</Text>
+          {report.cashFlows.map((item) => (
+            <View key={item.id}>{renderCashFlowItem({ item })}</View>
+          ))}
+
+          <Text style={styles.reportTitle}>Movimentações</Text>
+          {movementsReport.movements.map((item) => (
+            <View key={item.id}>{renderMovementItem({ item })}</View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Gerar Relatório</Text>
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-          <TextInput
-            style={styles.input}
-            placeholder="Data Inicial (YYYY-MM-DD)"
-            value={startDate}
-            onChangeText={setStartDate}
-            placeholderTextColor="#888"
+          <FlatList
+            data={[{}]}
+            renderItem={renderModalContent}
+            keyExtractor={() => "modal-content"}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.flatListContent}
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Data Final (YYYY-MM-DD)"
-            value={endDate}
-            onChangeText={setEndDate}
-            placeholderTextColor="#888"
-          />
-          <Picker
-            selectedValue={typeFilter}
-            style={styles.picker}
-            onValueChange={(value) => setTypeFilter(value)}
+          <TouchableOpacity
+            style={[styles.button, styles.closeButton]}
+            onPress={onClose}
           >
-            <Picker.Item label="Todos os Tipos" value="" />
-            <Picker.Item label="Entrada" value="entry" />
-            <Picker.Item label="Saída" value="exit" />
-          </Picker>
-          <Picker
-            selectedValue={paymentMethodFilter}
-            style={styles.picker}
-            onValueChange={(value) => setPaymentMethodFilter(value)}
-          >
-            <Picker.Item label="Todos os Métodos" value="" />
-            <Picker.Item label="Dinheiro" value="cash" />
-            <Picker.Item label="Cartão" value="card" />
-            <Picker.Item label="Pix" value="pix" />
-          </Picker>
-          <Button
-            title="Gerar Relatório"
-            onPress={handleGenerateReport}
-            color="#FFA500"
-          />
-          {report && movementsReport && (
-            <View style={styles.reportContainer}>
-              <Text style={styles.reportTitle}>Resumo do Relatório</Text>
-              <Text style={styles.reportText}>
-                Total Entradas: R$ {movementsReport.totalEntries.toFixed(2)}
-              </Text>
-              <Text style={styles.reportText}>
-                Total Saídas: R$ {movementsReport.totalExits.toFixed(2)}
-              </Text>
-              <Text style={styles.reportText}>
-                Saldo: R$ {movementsReport.balance.toFixed(2)}
-              </Text>
-              <Text style={styles.reportText}>
-                Total em Dinheiro: R$ {movementsReport.totalCash.toFixed(2)}
-              </Text>
-              <Text style={styles.reportText}>
-                Total em Cartão: R$ {movementsReport.totalCard.toFixed(2)}
-              </Text>
-              <Text style={styles.reportText}>
-                Total em Pix: R$ {movementsReport.totalPix.toFixed(2)}
-              </Text>
-              <Button
-                title="Exportar como CSV"
-                onPress={handleExportCSV}
-                color="#4CAF50"
-              />
-              <Text style={styles.reportTitle}>Caixas</Text>
-              <FlatList
-                data={report.cashFlows}
-                renderItem={renderCashFlowItem}
-                keyExtractor={(item) => item.id}
-                style={styles.cashFlowList}
-              />
-              <Text style={styles.reportTitle}>Movimentações</Text>
-              <FlatList
-                data={movementsReport.movements}
-                renderItem={renderMovementItem}
-                keyExtractor={(item) => item.id}
-                style={styles.movementsList}
-              />
-            </View>
-          )}
-          <Button title="Fechar" onPress={onClose} color="#FF4444" />
+            <Text style={styles.buttonText}>Fechar</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -303,81 +464,134 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
   },
   modalContainer: {
-    width: "80%",
-    padding: 20,
+    width: "90%",
+    maxHeight: "80%",
     backgroundColor: "#FFF",
-    borderRadius: 10,
-    alignItems: "center",
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  flatListContent: {
+    padding: 20,
+    paddingBottom: 20,
+  },
+  contentContainer: {
+    paddingBottom: 10,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     marginBottom: 15,
-    color: "#5C4329",
+    color: "#333",
+    textAlign: "center",
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 5,
   },
   input: {
     width: "100%",
-    height: 40,
-    borderColor: "#5C4329",
+    height: 44,
+    borderColor: "#CCC",
     borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
+    borderRadius: 8,
+    paddingHorizontal: 12,
     marginBottom: 15,
-    color: "#000",
+    backgroundColor: "#F9F9F9",
+    color: "#333",
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: "#CCC",
+    borderRadius: 8,
+    marginBottom: 15,
+    backgroundColor: "#F9F9F9",
   },
   picker: {
     width: "100%",
-    height: 40,
-    marginBottom: 15,
+    height: 44,
   },
   errorText: {
-    color: "red",
+    color: "#D32F2F",
     marginBottom: 10,
     textAlign: "center",
+    fontSize: 14,
+  },
+  button: {
+    width: "100%",
+    height: 44,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    marginVertical: 5,
+  },
+  generateButton: {
+    backgroundColor: "#FFA500",
+  },
+  exportButton: {
+    backgroundColor: "#4CAF50",
+  },
+  printButton: {
+    backgroundColor: "#2196F3",
+  },
+  closeButton: {
+    backgroundColor: "#FF4444",
+    margin: 10,
+  },
+  buttonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  buttonHalf: {
+    width: "48%",
   },
   reportContainer: {
-    marginTop: 20,
-    width: "100%",
+    marginTop: 15,
   },
   reportTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    marginBottom: 10,
-    marginTop: 10,
-    color: "#5C4329",
+    marginVertical: 10,
+    color: "#333",
   },
   reportText: {
     fontSize: 14,
     marginBottom: 5,
-    color: "#000",
-  },
-  cashFlowList: {
-    maxHeight: 150,
-    marginBottom: 10,
+    color: "#333",
   },
   cashFlowItem: {
     padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
+    borderBottomColor: "#EEE",
+    backgroundColor: "#F9F9F9",
+    borderRadius: 6,
+    marginBottom: 5,
   },
   cashFlowText: {
     fontSize: 14,
-    color: "#000",
-  },
-  movementsList: {
-    maxHeight: 150,
+    color: "#333",
   },
   movementItem: {
     padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
+    borderBottomColor: "#EEE",
+    backgroundColor: "#F9F9F9",
+    borderRadius: 6,
+    marginBottom: 5,
   },
   itemText: {
     fontSize: 14,
-    color: "#000",
+    color: "#333",
   },
 });
 
