@@ -15,6 +15,7 @@ import { createDrawerNavigator } from "@react-navigation/drawer";
 import HomeScreen from "./src/screens/HomeScreen";
 import HistoricoPedidosScreen from "./src/screens/HistoricoPedidosScreen";
 import CashFlowScreen from "./src/screens/CashFlowScreen";
+import DeliveryScreen from "./src/screens/DeliveryScreen";
 
 const Drawer = createDrawerNavigator();
 
@@ -102,6 +103,18 @@ function DrawerContent({ navigation }) {
           color="#FFA500"
         />
       </View>
+      <View style={{ marginVertical: 10 }}>
+        <Button
+          title="Delivery"
+          onPress={() =>
+            checkPassword(() => {
+              navigation.navigate("Delivery");
+              navigation.closeDrawer();
+            })
+          }
+          color="#FFA500"
+        />
+      </View>
 
       <Modal
         visible={passwordModalVisible}
@@ -160,6 +173,7 @@ export default function App() {
             component={HistoricoPedidosScreen}
           />
           <Drawer.Screen name="CashFlow" component={CashFlowScreen} />
+          <Drawer.Screen name="Delivery" component={DeliveryScreen} />
         </Drawer.Navigator>
         <StatusBar style="auto" />
       </NavigationContainer>
