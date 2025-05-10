@@ -170,12 +170,6 @@ export const juntarMesas = async (mesaIds) => {
       if (mesa.status === "fechada") {
         throw new Error("Não é possível juntar mesa fechada.");
       }
-      const hasPagamentoParcial =
-        (mesa.valorPago > 0 || mesa.historicoPagamentos?.length > 0) &&
-        mesa.valorRestante > 0;
-      if (hasPagamentoParcial) {
-        throw new Error("Não é possível juntar mesa com pagamento parcial.");
-      }
       if (!mesa.nomeCliente) {
         mesa.nomeCliente = `Mesa ${mesa.id}`;
       }

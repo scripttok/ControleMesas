@@ -57,6 +57,28 @@ function DrawerContent({ navigation }) {
       </View>
       <View style={{ marginVertical: 10 }}>
         <Button
+          title="Delivery"
+          onPress={() => {
+            navigation.navigate("Delivery");
+            navigation.closeDrawer();
+          }}
+          color="#FFA500"
+        />
+      </View>
+      <View style={{ marginVertical: 10 }}>
+        <Button
+          title="Controle de Caixa"
+          onPress={() =>
+            checkPassword(() => {
+              navigation.navigate("CashFlow");
+              navigation.closeDrawer();
+            })
+          }
+          color="#FFA500"
+        />
+      </View>
+      <View style={{ marginVertical: 10 }}>
+        <Button
           title="Controle de Estoque"
           onPress={() =>
             checkPassword(() => {
@@ -85,30 +107,6 @@ function DrawerContent({ navigation }) {
           onPress={() =>
             checkPassword(() => {
               navigation.navigate("HistoricoPedidos");
-              navigation.closeDrawer();
-            })
-          }
-          color="#FFA500"
-        />
-      </View>
-      <View style={{ marginVertical: 10 }}>
-        <Button
-          title="Controle de Caixa"
-          onPress={() =>
-            checkPassword(() => {
-              navigation.navigate("CashFlow");
-              navigation.closeDrawer();
-            })
-          }
-          color="#FFA500"
-        />
-      </View>
-      <View style={{ marginVertical: 10 }}>
-        <Button
-          title="Delivery"
-          onPress={() =>
-            checkPassword(() => {
-              navigation.navigate("Delivery");
               navigation.closeDrawer();
             })
           }
