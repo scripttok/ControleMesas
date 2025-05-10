@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, memo } from "react";
+import React, { useState, useEffect, useCallback, memo, useRef } from "react";
 import {
   View,
   Text,
@@ -27,21 +27,39 @@ const MemoizedTextInput = memo(
     keyboardType,
     returnKeyType,
     onSubmitEditing,
-  }) => (
-    <TextInput
-      style={style}
-      placeholder={placeholder}
-      value={value}
-      onChangeText={onChangeText}
-      placeholderTextColor={placeholderTextColor}
-      keyboardType={keyboardType}
-      blurOnSubmit={false}
-      autoCorrect={false}
-      autoCapitalize="none"
-      returnKeyType={returnKeyType}
-      onSubmitEditing={onSubmitEditing}
-    />
-  ),
+    inputRef,
+  }) => {
+    console.log(
+      "(NOBRIDGE) LOG Rendering MemoizedTextInput with value:",
+      value
+    );
+    return (
+      <TextInput
+        ref={inputRef}
+        style={style}
+        placeholder={placeholder}
+        value={value}
+        onChangeText={(text) => {
+          console.log(
+            "(NOBRIDGE) LOG TextInput onChangeText called with:",
+            text
+          );
+          onChangeText(text);
+        }}
+        placeholderTextColor={placeholderTextColor}
+        keyboardType={keyboardType}
+        blurOnSubmit={false}
+        autoCorrect={false}
+        autoCapitalize="none"
+        returnKeyType={returnKeyType}
+        onSubmitEditing={onSubmitEditing}
+        autoFocus={false}
+        selectTextOnFocus={true}
+        onFocus={() => console.log("(NOBRIDGE) LOG TextInput focused")}
+        onBlur={() => console.log("(NOBRIDGE) LOG TextInput blurred")}
+      />
+    );
+  },
   (prevProps, nextProps) => {
     return (
       prevProps.value === nextProps.value &&
@@ -55,6 +73,7 @@ const MemoizedTextInput = memo(
 );
 
 const DeliveryScreen = () => {
+  console.log("(NOBRIDGE) LOG DeliveryScreen version: 2025-05-10-v5");
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -72,6 +91,7 @@ const DeliveryScreen = () => {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const searchInputRef = useRef(null);
 
   // Callbacks estabilizados para atualizar clientData
   const updateClientName = useCallback((text) => {
@@ -104,14 +124,16 @@ const DeliveryScreen = () => {
       setLoading(true);
       setError("");
       try {
-        console.log("Aguardando inicialização do Firebase...");
+        console.log("(NOBRIDGE) LOG Aguardando inicialização do Firebase...");
         await waitForFirebaseInit();
-        console.log("Firebase inicializado, iniciando fetchStock...");
+        console.log(
+          "(NOBRIDGE) LOG Firebase inicializado, iniciando fetchStock..."
+        );
 
         const stockRef = ref(database, "estoque");
         const stockSnapshot = await get(stockRef);
         console.log(
-          "Stock snapshot:",
+          "(NOBRIDGE) LOG Stock snapshot:",
           stockSnapshot.exists()
             ? "Dados encontrados"
             : "Nenhum dado encontrado"
@@ -128,7 +150,7 @@ const DeliveryScreen = () => {
         const stockList = Object.keys(stockData)
           .map((key) => {
             const item = stockData[key];
-            console.log("Item:", key, item);
+            console.log("(NOBRIDGE) LOG Item:", key, item);
             return {
               id: key,
               name: item.nome,
@@ -144,10 +166,15 @@ const DeliveryScreen = () => {
           .filter(
             (item) => item.price !== undefined && item.quantity !== undefined
           );
+        console.log(
+          "(NOBRIDGE) LOG Stock list filtered:",
+          stockList.length,
+          "items"
+        );
         setItems(stockList);
         setFilteredItems(stockList);
       } catch (error) {
-        console.error("Erro ao carregar estoque:", error);
+        console.error("(NOBRIDGE) ERROR Erro ao carregar estoque:", error);
         setError("Não foi possível carregar o estoque: " + error.message);
       } finally {
         setLoading(false);
@@ -158,6 +185,7 @@ const DeliveryScreen = () => {
 
   const handleSearch = useCallback(
     (query) => {
+      console.log("(NOBRIDGE) LOG handleSearch called with query:", query);
       setSearchQuery(query);
       if (query.trim() === "") {
         setFilteredItems(items);
@@ -165,8 +193,11 @@ const DeliveryScreen = () => {
         const filtered = items.filter((item) =>
           item.name.toLowerCase().includes(query.toLowerCase())
         );
+        console.log("(NOBRIDGE) LOG Filtered items:", filtered.length);
         setFilteredItems(filtered);
       }
+      // Tentar manter o foco após a digitação
+      searchInputRef.current?.focus();
     },
     [items]
   );
@@ -292,10 +323,12 @@ const DeliveryScreen = () => {
     setLoading(true);
     try {
       console.log(
-        "Aguardando inicialização do Firebase para confirmar pedido..."
+        "(NOBRIDGE) LOG Aguardando inicialização do Firebase para confirmar pedido..."
       );
       await waitForFirebaseInit();
-      console.log("Firebase inicializado, confirmando pedido...");
+      console.log(
+        "(NOBRIDGE) LOG Firebase inicializado, confirmando pedido..."
+      );
 
       const order = {
         client: clientData,
@@ -308,14 +341,14 @@ const DeliveryScreen = () => {
         createdAt: new Date(),
         status: "Pendente",
       };
-      console.log("Salvando pedido:", order);
+      console.log("(NOBRIDGE) LOG Salvando pedido:", order);
       const orderRef = await addDoc(collection(db, "delivery_orders"), order);
-      console.log("Pedido salvo com ID:", orderRef.id);
+      console.log("(NOBRIDGE) LOG Pedido salvo com ID:", orderRef.id);
 
       for (const item of selectedItems) {
         const itemRef = ref(database, `estoque/${item.id}`);
         console.log(
-          `Tentando atualizar estoque para item ${item.id}: ${item.quantity} - ${item.orderQuantity}`
+          `(NOBRIDGE) LOG Tentando atualizar estoque para item ${item.id}: ${item.quantity} - ${item.orderQuantity}`
         );
         try {
           const itemSnapshot = await get(itemRef);
@@ -331,15 +364,18 @@ const DeliveryScreen = () => {
             quantidade: newQuantity,
           });
           console.log(
-            `Estoque atualizado para item ${item.id}: ${newQuantity}`
+            `(NOBRIDGE) LOG Estoque atualizado para item ${item.id}: ${newQuantity}`
           );
         } catch (updateError) {
-          console.error(`Erro ao atualizar item ${item.id}:`, updateError);
+          console.error(
+            `(NOBRIDGE) ERROR Erro ao atualizar item ${item.id}:`,
+            updateError
+          );
           throw updateError;
         }
       }
 
-      console.log("Iniciando impressão do pedido...");
+      console.log("(NOBRIDGE) LOG Iniciando impressão do pedido...");
       await printOrder({
         ...order,
         title: "Pedido Delivery",
@@ -358,7 +394,7 @@ const DeliveryScreen = () => {
       setFilteredItems(items);
       setError("");
     } catch (error) {
-      console.error("Erro ao confirmar pedido:", error);
+      console.error("(NOBRIDGE) ERROR Erro ao confirmar pedido:", error);
       setError("Não foi possível processar o pedido: " + error.message);
     } finally {
       setLoading(false);
@@ -438,23 +474,6 @@ const DeliveryScreen = () => {
           <Icon name="shopping-cart" size={24} color="#FF6F00" />
           <Text style={styles.sectionTitle}>Itens do Pedido</Text>
         </View>
-        <View style={styles.searchContainer}>
-          <Icon
-            name="search"
-            size={20}
-            color="#888"
-            style={styles.searchIcon}
-          />
-          <MemoizedTextInput
-            style={styles.searchInput}
-            placeholder="Buscar item por nome"
-            value={searchQuery}
-            onChangeText={handleSearch}
-            placeholderTextColor="#888"
-            returnKeyType="search"
-            onSubmitEditing={() => {}}
-          />
-        </View>
         {filteredItems.length === 0 && !loading && !error ? (
           <Text style={styles.infoText}>
             {searchQuery
@@ -464,7 +483,7 @@ const DeliveryScreen = () => {
         ) : null}
       </View>
     ),
-    [searchQuery, filteredItems, error, loading, handleSearch]
+    [filteredItems, error, loading, searchQuery]
   );
 
   const renderFooter = useCallback(
@@ -582,6 +601,31 @@ const DeliveryScreen = () => {
         />
       </View>
 
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Icon name="search" size={24} color="#FF6F00" />
+          <Text style={styles.sectionTitle}>Buscar Itens</Text>
+        </View>
+        <View style={styles.searchContainer}>
+          <Icon
+            name="search"
+            size={20}
+            color="#888"
+            style={styles.searchIcon}
+          />
+          <MemoizedTextInput
+            inputRef={searchInputRef}
+            style={styles.searchInput}
+            placeholder="Buscar item por nome"
+            value={searchQuery}
+            onChangeText={handleSearch}
+            placeholderTextColor="#888"
+            returnKeyType="search"
+            onSubmitEditing={() => {}}
+          />
+        </View>
+      </View>
+
       <FlatList
         data={filteredItems}
         keyExtractor={(item) => item.id}
@@ -591,7 +635,7 @@ const DeliveryScreen = () => {
         showsVerticalScrollIndicator={true}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="none"
-        extraData={selectedItems}
+        extraData={selectedItems.length}
       />
     </ScrollView>
   );
