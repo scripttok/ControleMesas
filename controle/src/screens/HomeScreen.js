@@ -239,6 +239,16 @@ export default function HomeScreen() {
       return;
     }
 
+    // Nova validação: verificar se a mesa está fechada
+    if (mesa.status === "fechada") {
+      ("(NOBRIDGE) LOG separarMesas - Mesa está fechada");
+      Alert.alert(
+        "Erro",
+        "Não é possível separar uma mesa com status fechada."
+      );
+      return;
+    }
+
     const hasPagamentoParcial =
       (mesa.valorPago > 0 || mesa.historicoPagamentos?.length > 0) &&
       mesa.valorRestante > 0;
@@ -405,7 +415,7 @@ export default function HomeScreen() {
       const updates = {};
       const novasMesas = await Promise.all(
         mesasComValores.map(async (mesaData) => {
-          "(NOBRIDGE) LOG separarMesas - Processslimando nova mesa:", mesaData;
+          "(NOBRIDGE) LOG separarMesas - Processando nova mesa:", mesaData;
           const { pedidos, originalId, ...mesaProps } = mesaData;
           let newId;
 
@@ -452,6 +462,7 @@ export default function HomeScreen() {
       );
     }
   };
+
   const verPedidos = useCallback((mesa) => {
     setMesaDetalhes(mesa);
     setDetalhesVisible(true);
