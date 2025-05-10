@@ -15,6 +15,7 @@ import {
   enviarComandaViaWhatsApp,
   removerPedidosDaMesa,
 } from "../services/mesaService";
+import { printOrder } from "../services/printerService";
 import * as FileSystem from "expo-file-system";
 import { salvarHistoricoPedido } from "../services/mesaService";
 
@@ -43,58 +44,84 @@ export default function FecharComandaModal({
 
   const calcularTotalPedido = (itens) => {
     const itensValidos = Array.isArray(itens) ? itens : [];
-    return itensValidos
-      .reduce((total, i) => {
-        const itemCardapio = cardapio.find((c) => c.nome === i.nome);
-        const precoUnitario = itemCardapio ? itemCardapio.precoUnitario : 0;
-        return total + (i.quantidade * precoUnitario || 0);
-      }, 0)
-      .toFixed(2);
+    const total = itensValidos.reduce((total, i) => {
+      const itemCardapio = cardapio.find((c) => c.nome === i.nome);
+      const precoUnitario =
+        itemCardapio && !isNaN(parseFloat(itemCardapio.precoUnitario))
+          ? parseFloat(itemCardapio.precoUnitario)
+          : 0;
+      const quantidade = i.quantidade || 0;
+      console.log("(NOBRIDGE) LOG calcularTotalPedido - Item:", {
+        nome: i.nome,
+        precoUnitario,
+        quantidade,
+        subtotal: quantidade * precoUnitario,
+      });
+      return total + quantidade * precoUnitario;
+    }, 0);
+    console.log("(NOBRIDGE) LOG calcularTotalPedido - Total:", total);
+    return total.toFixed(2);
   };
 
   const calcularTotalSemDesconto = () => {
     if (!pedidos || pedidos.length === 0) return "0.00";
-    return pedidos
-      .reduce((total, pedido) => {
-        return total + parseFloat(calcularTotalPedido(pedido.itens));
-      }, 0)
-      .toFixed(2);
+    const total = pedidos.reduce((total, pedido) => {
+      const pedidoTotal = parseFloat(calcularTotalPedido(pedido.itens)) || 0;
+      console.log(
+        "(NOBRIDGE) LOG calcularTotalSemDesconto - Pedido total:",
+        pedidoTotal
+      );
+      return total + pedidoTotal;
+    }, 0);
+    console.log("(NOBRIDGE) LOG calcularTotalSemDesconto - Total:", total);
+    return total.toFixed(2);
   };
 
   const calcularTotalComDesconto = () => {
-    const totalSemDesconto = parseFloat(calcularTotalSemDesconto());
+    const totalSemDesconto = parseFloat(calcularTotalSemDesconto()) || 0;
     const descontoNum = parseFloat(desconto) || 0;
-    return Math.max(0, totalSemDesconto - descontoNum).toFixed(2);
+    const total = Math.max(0, totalSemDesconto - descontoNum);
+    console.log(
+      "(NOBRIDGE) LOG calcularTotalComDesconto - Total com desconto:",
+      total
+    );
+    return total.toFixed(2);
   };
 
   const calcularRestante = () => {
-    const totalComDesconto = parseFloat(calcularTotalComDesconto());
-    const pagoAnterior = mesa?.valorPago || 0;
+    const totalComDesconto = parseFloat(calcularTotalComDesconto()) || 0;
+    const pagoAnterior = parseFloat(mesa?.valorPago) || 0;
     const pagoNovo = parseFloat(valorPago) || 0;
-    return Math.max(0, totalComDesconto - (pagoAnterior + pagoNovo)).toFixed(2);
+    const restante = Math.max(0, totalComDesconto - (pagoAnterior + pagoNovo));
+    console.log("(NOBRIDGE) LOG calcularRestante - Restante:", restante);
+    return restante.toFixed(2);
   };
 
   const calcularDivisao = () => {
-    const restante = parseFloat(calcularRestante());
+    const restante = parseFloat(calcularRestante()) || 0;
     const numDivisao = parseInt(divisao) || 1;
-    return (restante / numDivisao).toFixed(2);
+    const divisao = restante / numDivisao;
+    console.log("(NOBRIDGE) LOG calcularDivisao - Divisão:", divisao);
+    return divisao.toFixed(2);
   };
 
   const calcularTroco = () => {
     const recebido = parseFloat(valorRecebido) || 0;
-    const restante = parseFloat(calcularRestante());
-    return Math.max(0, recebido - restante).toFixed(2);
+    const restante = parseFloat(calcularRestante()) || 0;
+    const troco = Math.max(0, recebido - restante);
+    console.log("(NOBRIDGE) LOG calcularTroco - Troco:", troco);
+    return troco.toFixed(2);
   };
 
   const isPagamentoSuficiente = () => {
-    const restante = parseFloat(calcularRestante());
+    const restante = parseFloat(calcularRestante()) || 0;
     const recebido = parseFloat(valorRecebido) || 0;
     return recebido >= restante;
   };
 
   const isPagamentoParcial = () => {
-    const totalComDesconto = parseFloat(calcularTotalComDesconto());
-    const pagoAnterior = mesa?.valorPago || 0;
+    const totalComDesconto = parseFloat(calcularTotalComDesconto()) || 0;
+    const pagoAnterior = parseFloat(mesa?.valorPago) || 0;
     const pagoNovo = parseFloat(valorPago) || 0;
     const pagoTotal = pagoAnterior + pagoNovo;
     return pagoTotal > 0 && pagoTotal < totalComDesconto;
@@ -110,23 +137,35 @@ export default function FecharComandaModal({
     }, {});
     const itens = Object.entries(resumo).map(([item, quantidade]) => {
       const itemCardapio = cardapio.find((c) => c.nome === item);
-      const precoUnitario = itemCardapio ? itemCardapio.precoUnitario : 0;
+      const precoUnitario =
+        itemCardapio && !isNaN(parseFloat(itemCardapio.precoUnitario))
+          ? parseFloat(itemCardapio.precoUnitario)
+          : 0;
+      const subtotal = precoUnitario * quantidade;
+      console.log("(NOBRIDGE) LOG getResumoConta - Item:", {
+        item,
+        quantidade,
+        precoUnitario,
+        subtotal,
+      });
       return {
         item,
         quantidade,
         precoUnitario,
-        subtotal: precoUnitario * quantidade,
+        subtotal,
       };
     });
-    return {
-      nomeCliente: mesa?.nomeCliente || "N/A", // Removido numero
+    const resumoConta = {
+      nomeCliente: mesa?.nomeCliente || "N/A",
       itens,
       totalSemDesconto: calcularTotalSemDesconto(),
       desconto: parseFloat(desconto) || 0,
       total: calcularTotalComDesconto(),
-      pago: (mesa?.valorPago || 0) + (parseFloat(valorPago) || 0),
+      pago: (parseFloat(mesa?.valorPago) || 0) + (parseFloat(valorPago) || 0),
       restante: calcularRestante(),
     };
+    console.log("(NOBRIDGE) LOG getResumoConta - Resumo:", resumoConta);
+    return resumoConta;
   };
 
   const salvarPedidoNoHistorico = async (dadosPedido) => {
@@ -135,7 +174,7 @@ export default function FecharComandaModal({
       const nomeArquivo = `pedido_mesa_${mesa.id}_${dataAtual.replace(
         /[:.]/g,
         "-"
-      )}.json`; // Usar id em vez de numero
+      )}.json`;
       const caminhoArquivo = `${FileSystem.documentDirectory}${nomeArquivo}`;
 
       await FileSystem.writeAsStringAsync(
@@ -147,9 +186,12 @@ export default function FecharComandaModal({
         })
       );
 
-      "Pedido salvo no histórico:", nomeArquivo;
+      console.log("(NOBRIDGE) LOG Pedido salvo no histórico:", nomeArquivo);
     } catch (error) {
-      console.error("Erro ao salvar pedido no histórico:", error);
+      console.error(
+        "(NOBRIDGE) ERROR Erro ao salvar pedido no histórico:",
+        error
+      );
       throw error;
     }
   };
@@ -157,14 +199,14 @@ export default function FecharComandaModal({
   const handleFecharComanda = async () => {
     if (!mesa || isSubmitting) return;
 
-    const totalSemDesconto = parseFloat(calcularTotalSemDesconto());
+    const totalSemDesconto = parseFloat(calcularTotalSemDesconto()) || 0;
     const descontoNum = parseFloat(desconto) || 0;
 
     setIsSubmitting(true);
 
     try {
-      const totalComDesconto = parseFloat(calcularTotalComDesconto());
-      const pagoAnterior = mesa?.valorPago || 0;
+      const totalComDesconto = parseFloat(calcularTotalComDesconto()) || 0;
+      const pagoAnterior = parseFloat(mesa?.valorPago) || 0;
       const pagoNovo = parseFloat(valorPago) || 0;
       const recebido = parseFloat(valorRecebido) || 0;
       const troco = calcularTroco();
@@ -182,7 +224,7 @@ export default function FecharComandaModal({
       }
 
       const dadosParaHistorico = {
-        nomeCliente: mesa.nomeCliente, // Removido numero
+        nomeCliente: mesa.nomeCliente,
         itens: getResumoConta().itens,
         totalSemDesconto,
         desconto: descontoNum,
@@ -193,10 +235,13 @@ export default function FecharComandaModal({
         historicoPagamentos,
       };
 
-      "Dados completos para histórico:", dadosParaHistorico;
+      console.log(
+        "(NOBRIDGE) LOG Dados completos para histórico:",
+        dadosParaHistorico
+      );
 
       await salvarHistoricoPedido(dadosParaHistorico);
-      await removerPedidosDaMesa(mesa.id); // Usar id em vez de numero
+      await removerPedidosDaMesa(mesa.id);
 
       await fecharMesa(mesa.id, {
         valorPago: pagoTotal,
@@ -222,7 +267,7 @@ export default function FecharComandaModal({
       Alert.alert("Sucesso", "Comanda fechada com sucesso!");
       onFecharComanda();
     } catch (error) {
-      console.error("Erro completo ao fechar comanda:", error);
+      console.error("(NOBRIDGE) ERROR Erro completo ao fechar comanda:", error);
       Alert.alert(
         "Erro",
         `Não foi possível fechar a comanda: ${error.message}`
@@ -239,7 +284,7 @@ export default function FecharComandaModal({
     if (!mesa || isSubmitting) return;
     const pagoNovo = parseFloat(valorPago) || 0;
     const descontoNum = parseFloat(desconto) || 0;
-    const totalSemDesconto = parseFloat(calcularTotalSemDesconto());
+    const totalSemDesconto = parseFloat(calcularTotalSemDesconto()) || 0;
     if (descontoNum > totalSemDesconto) {
       Alert.alert(
         "Erro",
@@ -256,8 +301,8 @@ export default function FecharComandaModal({
     }
     setIsSubmitting(true);
     try {
-      const totalComDesconto = parseFloat(calcularTotalComDesconto());
-      const pagoAnterior = mesa?.valorPago || 0;
+      const totalComDesconto = parseFloat(calcularTotalComDesconto()) || 0;
+      const pagoAnterior = parseFloat(mesa?.valorPago) || 0;
       const recebido = parseFloat(valorRecebido) || 0;
       const pagoTotal = pagoAnterior + pagoNovo;
       const restante = Math.max(0, totalComDesconto - pagoTotal).toFixed(2);
@@ -283,7 +328,10 @@ export default function FecharComandaModal({
         historicoPagamentos,
       };
 
-      "Antes de chamar fecharMesa para pagamento parcial:", updates;
+      console.log(
+        "(NOBRIDGE) LOG Antes de chamar fecharMesa para pagamento parcial:",
+        updates
+      );
       await fecharMesa(mesa.id, updates);
 
       Alert.alert(
@@ -304,7 +352,10 @@ export default function FecharComandaModal({
         "Erro",
         `Não foi possível registrar o pagamento parcial: ${error.message}`
       );
-      console.error("Erro ao registrar pagamento parcial:", error);
+      console.error(
+        "(NOBRIDGE) ERROR Erro ao registrar pagamento parcial:",
+        error
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -316,7 +367,7 @@ export default function FecharComandaModal({
       return;
     }
 
-    const totalSemDesconto = parseFloat(calcularTotalSemDesconto());
+    const totalSemDesconto = parseFloat(calcularTotalSemDesconto()) || 0;
     const descontoNum = parseFloat(desconto) || 0;
 
     if (descontoNum > totalSemDesconto) {
@@ -350,7 +401,6 @@ export default function FecharComandaModal({
 
     setIsSubmitting(true);
     try {
-      // Aguarda a resolução da promessa para obter a string da URL
       const whatsappUrl = await enviarComandaViaWhatsApp(
         mesa.id,
         pedidos,
@@ -379,6 +429,59 @@ export default function FecharComandaModal({
     }
   };
 
+  const handleImprimirComanda = async () => {
+    if (!mesa || pedidos.length === 0 || isSubmitting) {
+      Alert.alert("Erro", "Nenhum pedido para imprimir.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const resumoConta = getResumoConta();
+      const order = {
+        title: `Comanda - ${mesa.nomeCliente || "Cliente"}`,
+        client: {
+          name: mesa.nomeCliente || "N/A",
+          phone: telefoneCliente || "N/A",
+          cpf: "N/A",
+        },
+        delivery: {
+          address: "",
+          neighborhood: "",
+          reference: "",
+          method: "N/A",
+        },
+        items: resumoConta.itens.map((item) => ({
+          name: item.item,
+          orderQuantity: item.quantidade,
+          price: isNaN(parseFloat(item.precoUnitario))
+            ? 0
+            : parseFloat(item.precoUnitario),
+        })),
+        total: isNaN(parseFloat(resumoConta.total))
+          ? 0
+          : parseFloat(resumoConta.total),
+        createdAt: new Date(),
+        status: "Pendente",
+      };
+
+      console.log(
+        "(NOBRIDGE) LOG Iniciando impressão da comanda - Order:",
+        JSON.stringify(order, null, 2)
+      );
+      await printOrder(order);
+
+      Alert.alert("Sucesso", "Comanda impressa com sucesso!");
+    } catch (error) {
+      console.error("(NOBRIDGE) ERROR Erro ao imprimir comanda:", error);
+      Alert.alert(
+        "Erro",
+        `Não foi possível imprimir a comanda: ${error.message}`
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   const CustomButton = ({ title, onPress, color, disabled }) => (
     <TouchableOpacity
       style={[
@@ -478,6 +581,12 @@ export default function FecharComandaModal({
                 onPress={handleEnviarWhatsApp}
                 color="#25D366"
                 disabled={!isPagamentoSuficiente() || isSubmitting}
+              />
+              <CustomButton
+                title="Imprimir Comanda"
+                onPress={handleImprimirComanda}
+                color="#007BFF"
+                disabled={isSubmitting}
               />
               <CustomButton
                 title="Fechar Comanda"
