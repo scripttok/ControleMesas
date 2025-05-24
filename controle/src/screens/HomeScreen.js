@@ -536,7 +536,7 @@ export default function HomeScreen() {
             color="#FFF"
             style={styles.chefHatIcon}
           />
-          <Text style={styles.titulo}>Arena CRB</Text>
+          <Text style={styles.titulo}>Adega Shellpi</Text>
         </View>
       </View>
       <TextInput
