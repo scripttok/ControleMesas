@@ -58,7 +58,6 @@ const firebaseConfig = {
 //   messagingSenderId: "525946263891",
 //   appId: "1:525946263891:android:804c41528d531c2b2c29a6",
 // };
-// Inicializa o Firebase para Firestore
 
 let firebaseInitialized = false;
 let auth, database, db;

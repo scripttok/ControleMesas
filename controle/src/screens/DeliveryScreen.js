@@ -3,12 +3,11 @@ import {
   View,
   Text,
   TextInput,
-  FlatList,
+  ScrollView,
   Alert,
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
-  ScrollView,
 } from "react-native";
 import { collection, addDoc } from "firebase/firestore";
 import { ref, get, update } from "firebase/database";
@@ -28,9 +27,10 @@ const MemoizedTextInput = memo(
     returnKeyType,
     onSubmitEditing,
     inputRef,
+    fieldName,
   }) => {
     console.log(
-      "(NOBRIDGE) LOG Rendering MemoizedTextInput with value:",
+      `(NOBRIDGE) LOG Rendering MemoizedTextInput for ${fieldName} with value:`,
       value
     );
     return (
@@ -41,7 +41,7 @@ const MemoizedTextInput = memo(
         value={value}
         onChangeText={(text) => {
           console.log(
-            "(NOBRIDGE) LOG TextInput onChangeText called with:",
+            `(NOBRIDGE) LOG TextInput onChangeText for ${fieldName} called with:`,
             text
           );
           onChangeText(text);
@@ -52,11 +52,17 @@ const MemoizedTextInput = memo(
         autoCorrect={false}
         autoCapitalize="none"
         returnKeyType={returnKeyType}
-        onSubmitEditing={onSubmitEditing}
-        autoFocus={false}
+        onSubmitEditing={() => {
+          console.log(`(NOBRIDGE) LOG TextInput for ${fieldName} submitted`);
+          onSubmitEditing?.();
+        }}
         selectTextOnFocus={true}
-        onFocus={() => console.log("(NOBRIDGE) LOG TextInput focused")}
-        onBlur={() => console.log("(NOBRIDGE) LOG TextInput blurred")}
+        onFocus={() =>
+          console.log(`(NOBRIDGE) LOG TextInput for ${fieldName} focused`)
+        }
+        onBlur={() =>
+          console.log(`(NOBRIDGE) LOG TextInput for ${fieldName} blurred`)
+        }
       />
     );
   },
@@ -67,13 +73,290 @@ const MemoizedTextInput = memo(
       prevProps.keyboardType === nextProps.keyboardType &&
       prevProps.onChangeText === nextProps.onChangeText &&
       prevProps.returnKeyType === nextProps.returnKeyType &&
-      prevProps.onSubmitEditing === nextProps.onSubmitEditing
+      prevProps.onSubmitEditing === nextProps.onSubmitEditing &&
+      prevProps.fieldName === nextProps.fieldName
+    );
+  }
+);
+
+// Componente memoizado para a seção de dados do cliente
+const ClientDataSection = memo(
+  ({
+    clientData,
+    updateClientName,
+    updateClientPhone,
+    updateClientCpf,
+    nameInputRef,
+    phoneInputRef,
+    cpfInputRef,
+  }) => {
+    console.log("(NOBRIDGE) LOG Rendering ClientDataSection");
+    return (
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Icon name="person" size={24} color="#FF6F00" />
+          <Text style={styles.sectionTitle}>Dados do Cliente</Text>
+        </View>
+        <MemoizedTextInput
+          inputRef={nameInputRef}
+          style={styles.input}
+          placeholder="Nome"
+          value={clientData.name}
+          onChangeText={updateClientName}
+          placeholderTextColor="#888"
+          returnKeyType="next"
+          fieldName="name"
+        />
+        <MemoizedTextInput
+          inputRef={phoneInputRef}
+          style={styles.input}
+          placeholder="Telefone"
+          value={clientData.phone}
+          onChangeText={updateClientPhone}
+          placeholderTextColor="#888"
+          keyboardType="phone-pad"
+          returnKeyType="next"
+          fieldName="phone"
+        />
+        <MemoizedTextInput
+          inputRef={cpfInputRef}
+          style={styles.input}
+          placeholder="CPF (opcional)"
+          value={clientData.cpf}
+          onChangeText={updateClientCpf}
+          placeholderTextColor="#888"
+          keyboardType="numeric"
+          returnKeyType="next"
+          fieldName="cpf"
+        />
+      </View>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.clientData.name === nextProps.clientData.name &&
+      prevProps.clientData.phone === nextProps.clientData.phone &&
+      prevProps.clientData.cpf === nextProps.clientData.cpf &&
+      prevProps.updateClientName === nextProps.updateClientName &&
+      prevProps.updateClientPhone === nextProps.updateClientPhone &&
+      prevProps.updateClientCpf === nextProps.updateClientCpf
+    );
+  }
+);
+
+// Componente memoizado para a seção de dados de entrega
+const DeliveryDataSection = memo(
+  ({
+    deliveryData,
+    updateDeliveryAddress,
+    updateDeliveryNeighborhood,
+    updateDeliveryReference,
+    addressInputRef,
+    neighborhoodInputRef,
+    referenceInputRef,
+  }) => {
+    console.log("(NOBRIDGE) LOG Rendering DeliveryDataSection");
+    return (
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Icon name="location-on" size={24} color="#FF6F00" />
+          <Text style={styles.sectionTitle}>Dados de Entrega</Text>
+        </View>
+        <MemoizedTextInput
+          inputRef={addressInputRef}
+          style={styles.input}
+          placeholder="Endereço"
+          value={deliveryData.address}
+          onChangeText={updateDeliveryAddress}
+          placeholderTextColor="#888"
+          returnKeyType="next"
+          fieldName="address"
+        />
+        <MemoizedTextInput
+          inputRef={neighborhoodInputRef}
+          style={styles.input}
+          placeholder="Bairro"
+          value={deliveryData.neighborhood}
+          onChangeText={updateDeliveryNeighborhood}
+          placeholderTextColor="#888"
+          returnKeyType="next"
+          fieldName="neighborhood"
+        />
+        <MemoizedTextInput
+          inputRef={referenceInputRef}
+          style={styles.input}
+          placeholder="Ponto de Referência"
+          value={deliveryData.reference}
+          onChangeText={updateDeliveryReference}
+          placeholderTextColor="#888"
+          returnKeyType="done"
+          fieldName="reference"
+        />
+      </View>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.deliveryData.address === nextProps.deliveryData.address &&
+      prevProps.deliveryData.neighborhood ===
+        nextProps.deliveryData.neighborhood &&
+      prevProps.deliveryData.reference === nextProps.deliveryData.reference &&
+      prevProps.updateDeliveryAddress === nextProps.updateDeliveryAddress &&
+      prevProps.updateDeliveryNeighborhood ===
+        nextProps.updateDeliveryNeighborhood &&
+      prevProps.updateDeliveryReference === nextProps.updateDeliveryReference
+    );
+  }
+);
+
+// Componente memoizado para a seção de busca
+const SearchSection = memo(
+  ({ searchQuery, handleSearch, searchInputRef }) => {
+    console.log("(NOBRIDGE) LOG Rendering SearchSection");
+    return (
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Icon name="search" size={24} color="#FF6F00" />
+          <Text style={styles.sectionTitle}>Buscar Itens</Text>
+        </View>
+        <View style={styles.searchContainer}>
+          <Icon
+            name="search"
+            size={20}
+            color="#888"
+            style={styles.searchIcon}
+          />
+          <MemoizedTextInput
+            inputRef={searchInputRef}
+            style={styles.searchInput}
+            placeholder="Buscar item por nome"
+            value={searchQuery}
+            onChangeText={handleSearch}
+            placeholderTextColor="#888"
+            returnKeyType="search"
+            fieldName="search"
+          />
+        </View>
+      </View>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.searchQuery === nextProps.searchQuery &&
+      prevProps.handleSearch === nextProps.handleSearch
+    );
+  }
+);
+
+// Componente memoizado para cada item da lista
+const ItemCard = memo(
+  ({ item, addItemToOrder }) => {
+    console.log("(NOBRIDGE) LOG Rendering ItemCard for:", item.name);
+    return (
+      <View style={styles.itemCard}>
+        <View style={styles.itemInfo}>
+          <Text style={styles.itemText} numberOfLines={2} ellipsizeMode="tail">
+            {item.name}
+          </Text>
+          <Text style={styles.itemSubText}>
+            R${item.price?.toFixed(2) || "N/A"} | Estoque: {item.quantity || 0}
+          </Text>
+          <Text style={styles.itemCategory}>
+            Categoria: {item.categoria || "N/A"}
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => addItemToOrder(item)}
+        >
+          <Icon name="add-circle" size={28} color="#FFF" />
+          <Text style={styles.addButtonText}>Adicionar</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.item.id === nextProps.item.id &&
+      prevProps.item.name === nextProps.item.name &&
+      prevProps.item.price === nextProps.item.price &&
+      prevProps.item.quantity === nextProps.item.quantity &&
+      prevProps.item.categoria === nextProps.item.categoria &&
+      prevProps.addItemToOrder === nextProps.addItemToOrder
+    );
+  }
+);
+
+// Componente memoizado para cada item selecionado
+const SelectedItemCard = memo(
+  ({
+    item,
+    index,
+    decrementQuantity,
+    updateItemQuantity,
+    incrementQuantity,
+    removeItem,
+  }) => {
+    console.log("(NOBRIDGE) LOG Rendering SelectedItemCard for:", item.name);
+    return (
+      <View key={`${item.id}-${index}`} style={styles.selectedItemCard}>
+        <View style={styles.itemInfo}>
+          <Text style={styles.itemText} numberOfLines={2} ellipsizeMode="tail">
+            {item.name}
+          </Text>
+          <Text style={styles.itemSubText}>
+            R${(item.price * item.orderQuantity).toFixed(2)}
+          </Text>
+        </View>
+        <View style={styles.quantityContainer}>
+          <Text style={styles.quantityLabel}>Qtd:</Text>
+          <TouchableOpacity
+            style={styles.quantityButton}
+            onPress={() => decrementQuantity(item.id)}
+          >
+            <Icon name="remove" size={20} color="#FFF" />
+          </TouchableOpacity>
+          <MemoizedTextInput
+            style={styles.quantityInput}
+            keyboardType="numeric"
+            value={item.orderQuantity.toString()}
+            onChangeText={(text) => updateItemQuantity(item.id, text)}
+            placeholderTextColor="#888"
+            returnKeyType="done"
+            fieldName={`quantity-${item.id}`}
+          />
+          <TouchableOpacity
+            style={[styles.quantityButton, styles.incrementButton]}
+            onPress={() => incrementQuantity(item.id)}
+          >
+            <Icon name="add" size={20} color="#FFF" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.removeButton}
+            onPress={() => removeItem(item.id)}
+          >
+            <Icon name="delete" size={24} color="#FFF" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.item.id === nextProps.item.id &&
+      prevProps.item.name === nextProps.item.name &&
+      prevProps.item.price === nextProps.item.price &&
+      prevProps.item.orderQuantity === nextProps.item.orderQuantity &&
+      prevProps.decrementQuantity === nextProps.decrementQuantity &&
+      prevProps.updateItemQuantity === nextProps.updateItemQuantity &&
+      prevProps.incrementQuantity === nextProps.incrementQuantity &&
+      prevProps.removeItem === nextProps.removeItem
     );
   }
 );
 
 const DeliveryScreen = () => {
-  console.log("(NOBRIDGE) LOG DeliveryScreen version: 2025-05-10-v5");
+  console.log("(NOBRIDGE) LOG DeliveryScreen version: 2025-05-24-v9");
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -91,33 +374,91 @@ const DeliveryScreen = () => {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [activeInput, setActiveInput] = useState(null); // Estado para rastrear o input ativo
+
+  // Referências para os TextInput
+  const nameInputRef = useRef(null);
+  const phoneInputRef = useRef(null);
+  const cpfInputRef = useRef(null);
+  const addressInputRef = useRef(null);
+  const neighborhoodInputRef = useRef(null);
+  const referenceInputRef = useRef(null);
   const searchInputRef = useRef(null);
+
+  // Mapeamento de refs para facilitar restauração do foco
+  const inputRefs = {
+    name: nameInputRef,
+    phone: phoneInputRef,
+    cpf: cpfInputRef,
+    address: addressInputRef,
+    neighborhood: neighborhoodInputRef,
+    reference: referenceInputRef,
+    search: searchInputRef,
+  };
+
+  // Restaurar foco após re-renderização com um pequeno atraso
+  useEffect(() => {
+    if (activeInput && inputRefs[activeInput]?.current) {
+      console.log(
+        `(NOBRIDGE) LOG Scheduling focus restoration for ${activeInput}`
+      );
+      const timer = setTimeout(() => {
+        console.log(`(NOBRIDGE) LOG Restoring focus to ${activeInput}`);
+        inputRefs[activeInput].current.focus();
+      }, 50); // Atraso de 50ms para garantir que o blur tenha sido processado
+      return () => clearTimeout(timer);
+    }
+  }, [clientData, deliveryData, searchQuery, activeInput]);
 
   // Callbacks estabilizados para atualizar clientData
   const updateClientName = useCallback((text) => {
     setClientData((prev) => ({ ...prev, name: text }));
+    setActiveInput("name");
   }, []);
 
   const updateClientPhone = useCallback((text) => {
     setClientData((prev) => ({ ...prev, phone: text }));
+    setActiveInput("phone");
   }, []);
 
   const updateClientCpf = useCallback((text) => {
     setClientData((prev) => ({ ...prev, cpf: text }));
+    setActiveInput("cpf");
   }, []);
 
   // Callbacks estabilizados para atualizar deliveryData
   const updateDeliveryAddress = useCallback((text) => {
     setDeliveryData((prev) => ({ ...prev, address: text }));
+    setActiveInput("address");
   }, []);
 
   const updateDeliveryNeighborhood = useCallback((text) => {
     setDeliveryData((prev) => ({ ...prev, neighborhood: text }));
+    setActiveInput("neighborhood");
   }, []);
 
   const updateDeliveryReference = useCallback((text) => {
     setDeliveryData((prev) => ({ ...prev, reference: text }));
+    setActiveInput("reference");
   }, []);
+
+  const handleSearch = useCallback(
+    (query) => {
+      console.log("(NOBRIDGE) LOG handleSearch called with query:", query);
+      setSearchQuery(query);
+      setActiveInput("search");
+      if (query.trim() === "") {
+        setFilteredItems(items);
+      } else {
+        const filtered = items.filter((item) =>
+          item.name.toLowerCase().includes(query.toLowerCase())
+        );
+        console.log("(NOBRIDGE) LOG Filtered items:", filtered.length);
+        setFilteredItems(filtered);
+      }
+    },
+    [items]
+  );
 
   useEffect(() => {
     const fetchStock = async () => {
@@ -182,25 +523,6 @@ const DeliveryScreen = () => {
     };
     fetchStock();
   }, []);
-
-  const handleSearch = useCallback(
-    (query) => {
-      console.log("(NOBRIDGE) LOG handleSearch called with query:", query);
-      setSearchQuery(query);
-      if (query.trim() === "") {
-        setFilteredItems(items);
-      } else {
-        const filtered = items.filter((item) =>
-          item.name.toLowerCase().includes(query.toLowerCase())
-        );
-        console.log("(NOBRIDGE) LOG Filtered items:", filtered.length);
-        setFilteredItems(filtered);
-      }
-      // Tentar manter o foco após a digitação
-      searchInputRef.current?.focus();
-    },
-    [items]
-  );
 
   const addItemToOrder = useCallback(
     (item) => {
@@ -393,6 +715,7 @@ const DeliveryScreen = () => {
       setSearchQuery("");
       setFilteredItems(items);
       setError("");
+      setActiveInput(null);
     } catch (error) {
       console.error("(NOBRIDGE) ERROR Erro ao confirmar pedido:", error);
       setError("Não foi possível processar o pedido: " + error.message);
@@ -401,74 +724,46 @@ const DeliveryScreen = () => {
     }
   }, [clientData, deliveryData, selectedItems, items]);
 
-  const renderItem = ({ item }) => (
-    <View style={styles.itemCard}>
-      <View style={styles.itemInfo}>
-        <Text style={styles.itemText} numberOfLines={2} ellipsizeMode="tail">
-          {item.name}
-        </Text>
-        <Text style={styles.itemSubText}>
-          R${item.price?.toFixed(2) || "N/A"} | Estoque: {item.quantity || 0}
-        </Text>
-        <Text style={styles.itemCategory}>
-          Categoria: {item.categoria || "N/A"}
-        </Text>
-      </View>
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => addItemToOrder(item)}
-      >
-        <Icon name="add-circle" size={28} color="#FFF" />
-        <Text style={styles.addButtonText}>Adicionar</Text>
-      </TouchableOpacity>
-    </View>
-  );
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      showsVerticalScrollIndicator={true}
+    >
+      <Text style={styles.title}>Novo Pedido Delivery</Text>
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {loading && (
+        <ActivityIndicator size="large" color="#FF6F00" style={styles.loader} />
+      )}
 
-  const renderSelectedItem = ({ item, index }) => (
-    <View key={`${item.id}-${index}`} style={styles.selectedItemCard}>
-      <View style={styles.itemInfo}>
-        <Text style={styles.itemText} numberOfLines={2} ellipsizeMode="tail">
-          {item.name}
-        </Text>
-        <Text style={styles.itemSubText}>
-          R${(item.price * item.orderQuantity).toFixed(2)}
-        </Text>
-      </View>
-      <View style={styles.quantityContainer}>
-        <Text style={styles.quantityLabel}>Qtd:</Text>
-        <TouchableOpacity
-          style={styles.quantityButton}
-          onPress={() => decrementQuantity(item.id)}
-        >
-          <Icon name="remove" size={20} color="#FFF" />
-        </TouchableOpacity>
-        <MemoizedTextInput
-          style={styles.quantityInput}
-          keyboardType="numeric"
-          value={item.orderQuantity.toString()}
-          onChangeText={(text) => updateItemQuantity(item.id, text)}
-          placeholderTextColor="#888"
-          returnKeyType="done"
-          onSubmitEditing={() => {}}
-        />
-        <TouchableOpacity
-          style={[styles.quantityButton, styles.incrementButton]}
-          onPress={() => incrementQuantity(item.id)}
-        >
-          <Icon name="add" size={20} color="#FFF" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.removeButton}
-          onPress={() => removeItem(item.id)}
-        >
-          <Icon name="delete" size={24} color="#FFF" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+      <ClientDataSection
+        clientData={clientData}
+        updateClientName={updateClientName}
+        updateClientPhone={updateClientPhone}
+        updateClientCpf={updateClientCpf}
+        nameInputRef={nameInputRef}
+        phoneInputRef={phoneInputRef}
+        cpfInputRef={cpfInputRef}
+      />
 
-  const renderHeader = useCallback(
-    () => (
+      <DeliveryDataSection
+        deliveryData={deliveryData}
+        updateDeliveryAddress={updateDeliveryAddress}
+        updateDeliveryNeighborhood={updateDeliveryNeighborhood}
+        updateDeliveryReference={updateDeliveryReference}
+        addressInputRef={addressInputRef}
+        neighborhoodInputRef={neighborhoodInputRef}
+        referenceInputRef={referenceInputRef}
+      />
+
+      <SearchSection
+        searchQuery={searchQuery}
+        handleSearch={handleSearch}
+        searchInputRef={searchInputRef}
+      />
+
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Icon name="shopping-cart" size={24} color="#FF6F00" />
@@ -480,163 +775,49 @@ const DeliveryScreen = () => {
               ? "Nenhum item encontrado para a busca."
               : "Nenhum item disponível no estoque."}
           </Text>
-        ) : null}
-      </View>
-    ),
-    [filteredItems, error, loading, searchQuery]
-  );
-
-  const renderFooter = useCallback(
-    () => (
-      <>
-        {selectedItems.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Icon name="check-circle" size={24} color="#FF6F00" />
-              <Text style={styles.sectionTitle}>Itens Selecionados</Text>
-            </View>
-            <ScrollView style={styles.list} nestedScrollEnabled={true}>
-              {selectedItems.map((item, index) =>
-                renderSelectedItem({ item, index })
-              )}
-            </ScrollView>
-          </View>
+        ) : (
+          filteredItems.map((item) => (
+            <ItemCard
+              key={item.id}
+              item={item}
+              addItemToOrder={addItemToOrder}
+            />
+          ))
         )}
+      </View>
 
-        <TouchableOpacity
-          style={[styles.confirmButton, loading && styles.disabledButton]}
-          onPress={confirmOrder}
-          disabled={loading}
-        >
-          <Text style={styles.confirmButtonText}>
-            {loading ? "Confirmando..." : "Confirmar Pedido"}
-          </Text>
-          <Icon name="send" size={20} color="#FFF" style={styles.buttonIcon} />
-        </TouchableOpacity>
-      </>
-    ),
-    [selectedItems, loading, confirmOrder]
-  );
-
-  return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="none"
-    >
-      <Text style={styles.title}>Novo Pedido Delivery</Text>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-      {loading && (
-        <ActivityIndicator size="large" color="#FF6F00" style={styles.loader} />
+      {selectedItems.length > 0 && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Icon name="check-circle" size={24} color="#FF6F00" />
+            <Text style={styles.sectionTitle}>Itens Selecionados</Text>
+          </View>
+          <View style={styles.list}>
+            {selectedItems.map((item, index) => (
+              <SelectedItemCard
+                key={`${item.id}-${index}`}
+                item={item}
+                index={index}
+                decrementQuantity={decrementQuantity}
+                updateItemQuantity={updateItemQuantity}
+                incrementQuantity={incrementQuantity}
+                removeItem={removeItem}
+              />
+            ))}
+          </View>
+        </View>
       )}
 
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Icon name="person" size={24} color="#FF6F00" />
-          <Text style={styles.sectionTitle}>Dados do Cliente</Text>
-        </View>
-        <MemoizedTextInput
-          style={styles.input}
-          placeholder="Nome"
-          value={clientData.name}
-          onChangeText={updateClientName}
-          placeholderTextColor="#888"
-          returnKeyType="next"
-          onSubmitEditing={() => {}}
-        />
-        <MemoizedTextInput
-          style={styles.input}
-          placeholder="Telefone"
-          value={clientData.phone}
-          onChangeText={updateClientPhone}
-          placeholderTextColor="#888"
-          keyboardType="phone-pad"
-          returnKeyType="next"
-          onSubmitEditing={() => {}}
-        />
-        <MemoizedTextInput
-          style={styles.input}
-          placeholder="CPF (opcional)"
-          value={clientData.cpf}
-          onChangeText={updateClientCpf}
-          placeholderTextColor="#888"
-          keyboardType="numeric"
-          returnKeyType="done"
-          onSubmitEditing={() => {}}
-        />
-      </View>
-
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Icon name="location-on" size={24} color="#FF6F00" />
-          <Text style={styles.sectionTitle}>Dados de Entrega</Text>
-        </View>
-        <MemoizedTextInput
-          style={styles.input}
-          placeholder="Endereço"
-          value={deliveryData.address}
-          onChangeText={updateDeliveryAddress}
-          placeholderTextColor="#888"
-          returnKeyType="next"
-          onSubmitEditing={() => {}}
-        />
-        <MemoizedTextInput
-          style={styles.input}
-          placeholder="Bairro"
-          value={deliveryData.neighborhood}
-          onChangeText={updateDeliveryNeighborhood}
-          placeholderTextColor="#888"
-          returnKeyType="next"
-          onSubmitEditing={() => {}}
-        />
-        <MemoizedTextInput
-          style={styles.input}
-          placeholder="Ponto de Referência"
-          value={deliveryData.reference}
-          onChangeText={updateDeliveryReference}
-          placeholderTextColor="#888"
-          returnKeyType="done"
-          onSubmitEditing={() => {}}
-        />
-      </View>
-
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Icon name="search" size={24} color="#FF6F00" />
-          <Text style={styles.sectionTitle}>Buscar Itens</Text>
-        </View>
-        <View style={styles.searchContainer}>
-          <Icon
-            name="search"
-            size={20}
-            color="#888"
-            style={styles.searchIcon}
-          />
-          <MemoizedTextInput
-            inputRef={searchInputRef}
-            style={styles.searchInput}
-            placeholder="Buscar item por nome"
-            value={searchQuery}
-            onChangeText={handleSearch}
-            placeholderTextColor="#888"
-            returnKeyType="search"
-            onSubmitEditing={() => {}}
-          />
-        </View>
-      </View>
-
-      <FlatList
-        data={filteredItems}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        ListHeaderComponent={renderHeader}
-        ListFooterComponent={renderFooter}
-        showsVerticalScrollIndicator={true}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="none"
-        extraData={selectedItems.length}
-      />
+      <TouchableOpacity
+        style={[styles.confirmButton, loading && styles.disabledButton]}
+        onPress={confirmOrder}
+        disabled={loading}
+      >
+        <Text style={styles.confirmButtonText}>
+          {loading ? "Confirmando..." : "Confirmar Pedido"}
+        </Text>
+        <Icon name="send" size={20} color="#FFF" style={styles.buttonIcon} />
+      </TouchableOpacity>
     </ScrollView>
   );
 };
