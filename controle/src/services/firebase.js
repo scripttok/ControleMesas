@@ -88,23 +88,34 @@ try {
   console.error("Erro ao inicializar Firebase:", error);
 }
 
-const waitForFirebaseInit = () => {
-  return new Promise((resolve, reject) => {
-    if (firebaseInitialized && auth && database && db) {
-      resolve(database);
-    } else {
-      const interval = setInterval(() => {
-        if (firebaseInitialized && auth && database && db) {
-          clearInterval(interval);
-          resolve(database);
-        }
-      }, 100);
-      setTimeout(() => {
-        clearInterval(interval);
-        reject(new Error("Firebase não inicializado após 10 segundos."));
-      }, 10000);
+const waitForFirebaseInit = async () => {
+  if (firebase.apps.length === 0) {
+    console.log("(NOBRIDGE) LOG waitForFirebaseInit - Inicializando Firebase");
+    try {
+      firebase.initializeApp(firebaseConfig);
+      console.log(
+        "(NOBRIDGE) LOG waitForFirebaseInit - Firebase inicializado com sucesso"
+      );
+    } catch (error) {
+      console.error(
+        "(NOBRIDGE) ERROR waitForFirebaseInit - Erro ao inicializar Firebase:",
+        error
+      );
+      return null;
     }
-  });
+  } else {
+    console.log(
+      "(NOBRIDGE) LOG waitForFirebaseInit - Firebase já inicializado"
+    );
+  }
+  const db = firebase.database();
+  if (!db) {
+    console.error(
+      "(NOBRIDGE) ERROR waitForFirebaseInit - Database não inicializada"
+    );
+    return null;
+  }
+  return db;
 };
 
 async function openCashFlow(operatorName, openAmount) {

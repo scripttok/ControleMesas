@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Modal,
   View,
@@ -30,20 +30,106 @@ export default function DetalhesMesaModal({
   const [cardapio, setCardapio] = useState([]);
   const [mesaAtual, setMesaAtual] = useState(mesa || {});
   const [pedidosLocais, setPedidosLocais] = useState(pedidos || []);
+  const unsubscribeRef = useRef(null);
 
   const fetchMesaAtual = async () => {
-    if (!mesa?.id) return;
+    if (!mesa?.id) {
+      console.warn("(NOBRIDGE) WARN fetchMesaAtual - ID da mesa não fornecido");
+      return;
+    }
     try {
       const freshDb = await waitForFirebaseInit();
-      const ref = freshDb.ref(`mesas/${mesa.id}`);
-      const snapshot = await ref.once("value");
-      const mesaData = snapshot.val();
-      if (mesaData) {
-        "(NOBRIDGE) LOG Mesa atualizada do Firebase:", mesaData;
-        setMesaAtual({ id: mesa.id, ...mesaData });
+      if (!freshDb) {
+        console.error(
+          "(NOBRIDGE) ERROR fetchMesaAtual - Firebase não inicializado"
+        );
+        return;
       }
+      const ref = freshDb.ref(`mesas/${mesa.id}`);
+      const snapshot = await ref.once("value").catch((error) => {
+        console.error(
+          "(NOBRIDGE) ERROR fetchMesaAtual - Erro ao buscar snapshot:",
+          error
+        );
+        return null;
+      });
+      if (!snapshot) {
+        console.warn(
+          "(NOBRIDGE) WARN fetchMesaAtual - Snapshot não retornado para mesa:",
+          mesa.id
+        );
+        setMesaAtual({ id: mesa.id });
+        return;
+      }
+      if (!snapshot.exists()) {
+        console.warn(
+          "(NOBRIDGE) WARN fetchMesaAtual - Mesa não encontrada:",
+          mesa.id
+        );
+        setMesaAtual({ id: mesa.id });
+        return;
+      }
+      const mesaData = snapshot.val();
+      console.log("(NOBRIDGE) LOG Mesa atualizada do Firebase:", mesaData);
+      setMesaAtual({ id: mesa.id, ...mesaData });
     } catch (error) {
       console.error("(NOBRIDGE) ERROR Erro ao buscar mesa do Firebase:", error);
+    }
+  };
+  const fetchPedidos = async () => {
+    if (!mesa?.id) {
+      console.warn("(NOBRIDGE) WARN fetchPedidos - ID da mesa não fornecido");
+      return;
+    }
+    try {
+      const freshDb = await waitForFirebaseInit();
+      if (!freshDb) {
+        console.error(
+          "(NOBRIDGE) ERROR fetchPedidos - Firebase não inicializado"
+        );
+        setPedidosLocais([]);
+        return;
+      }
+      const ref = freshDb.ref("pedidos");
+      unsubscribeRef.current = ref
+        .orderByChild("mesa")
+        .equalTo(mesa.id)
+        .on(
+          "value",
+          (snapshot) => {
+            if (!snapshot) {
+              console.log(
+                "(NOBRIDGE) LOG fetchPedidos - Nenhum snapshot retornado para mesa:",
+                mesa.id
+              );
+              setPedidosLocais([]);
+              return;
+            }
+            const data = snapshot.exists() ? snapshot.val() : null;
+            console.log("(NOBRIDGE) LOG Pedidos recebidos para mesa:", {
+              mesaId: mesa.id,
+              data,
+            });
+            const pedidosAtualizados = data
+              ? Object.entries(data).map(([id, value]) => ({ id, ...value }))
+              : [];
+            console.log(
+              "(NOBRIDGE) LOG Pedidos processados:",
+              pedidosAtualizados
+            );
+            setPedidosLocais(pedidosAtualizados);
+          },
+          (error) => {
+            console.error("(NOBRIDGE) ERROR Erro ao buscar pedidos:", error);
+            setPedidosLocais([]);
+          }
+        );
+    } catch (error) {
+      console.error(
+        "(NOBRIDGE) ERROR Erro ao configurar listener de pedidos:",
+        error
+      );
+      setPedidosLocais([]);
     }
   };
 
@@ -97,22 +183,34 @@ export default function DetalhesMesaModal({
   };
 
   useEffect(() => {
-    "(NOBRIDGE) LOG Mesa recebida como prop:", mesa;
+    console.log("(NOBRIDGE) LOG Mesa recebida como prop:", mesa);
     setMesaAtual(mesa || {});
     setPedidosLocais(pedidos || []);
 
-    let unsubscribe;
+    let unsubscribeCardapio;
     if (visible) {
       fetchMesaAtual();
-      unsubscribe = getCardapio((data) => {
-        "(NOBRIDGE) LOG Cardápio recebido no DetalhesMesaModal:", data;
+      fetchPedidos();
+      unsubscribeCardapio = getCardapio((data) => {
+        console.log(
+          "(NOBRIDGE) LOG Cardápio recebido no DetalhesMesaModal:",
+          data
+        );
         setCardapio(data);
       });
     }
     return () => {
-      if (unsubscribe) {
-        ("(NOBRIDGE) LOG Desmontando listener de cardápio no DetalhesMesaModal");
-        unsubscribe();
+      if (unsubscribeCardapio) {
+        console.log(
+          "(NOBRIDGE) LOG Desmontando listener de cardápio no DetalhesMesaModal"
+        );
+        unsubscribeCardapio();
+      }
+      if (unsubscribeRef.current) {
+        console.log(
+          "(NOBRIDGE) LOG Desmontando listener de pedidos no DetalhesMesaModal"
+        );
+        unsubscribeRef.current();
       }
     };
   }, [visible, mesa, pedidos]);

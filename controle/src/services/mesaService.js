@@ -50,66 +50,43 @@ export const getMesas = (callback) => {
   const setupListener = async () => {
     const freshDb = await waitForFirebaseInit();
     if (!freshDb) {
-      console.error("Firebase DB não inicializado em getMesas");
+      console.error("(NOBRIDGE) ERROR getMesas - Firebase não inicializado");
       callback([]);
       return;
     }
     ref = freshDb.ref("mesas");
-    let initialLoad = false;
-
-    // Carrega o snapshot inicial
     ref.on(
       "value",
       (snapshot) => {
         const data = snapshot.val();
-        console.log("Mesas recebidas (value):", data);
+        console.log(
+          "(NOBRIDGE) LOG getMesas - Dados recebidos do Firebase:",
+          data
+        );
         const mesas = data
-          ? Object.entries(data).map(([id, value]) => ({
-              id,
-              ...value,
-              nomeCliente: value.nomeCliente || `Mesa ${id}`,
-            }))
+          ? [
+              ...new Map(
+                Object.entries(data).map(([id, value]) => [
+                  id,
+                  { id, ...value },
+                ])
+              ).values(),
+            ]
           : [];
+        console.log("(NOBRIDGE) LOG getMesas - Mesas processadas:", mesas);
         callback(mesas);
-        initialLoad = true;
       },
       (error) => {
-        console.error("Erro em getMesas (value):", error);
+        console.error("(NOBRIDGE) ERROR getMesas - Erro no listener:", error);
         callback([]);
-      }
-    );
-
-    // Escuta novas mesas adicionadas
-    ref.on(
-      "child_added",
-      (snapshot) => {
-        if (initialLoad) {
-          const newMesa = {
-            id: snapshot.key,
-            ...snapshot.val(),
-            nomeCliente: snapshot.val().nomeCliente || `Mesa ${snapshot.key}`,
-          };
-          console.log("Nova mesa adicionada (child_added):", newMesa);
-          callback((prevMesas) => {
-            // Evita duplicação se a mesa já está no estado
-            if (prevMesas.some((m) => m.id === newMesa.id)) {
-              return prevMesas;
-            }
-            return [...prevMesas, newMesa];
-          });
-        }
-      },
-      (error) => {
-        console.error("Erro em getMesas (child_added):", error);
       }
     );
   };
   setupListener();
   return () => {
     if (ref) {
-      console.log("Desmontando listeners de mesas");
+      console.log("(NOBRIDGE) LOG getMesas - Desmontando listener de mesas");
       ref.off("value");
-      ref.off("child_added");
     }
   };
 };
@@ -128,15 +105,21 @@ export const getPedidos = (callback) => {
       "value",
       (snapshot) => {
         const data = snapshot.val();
-        console.log("Pedidos recebidos:", data);
-        callback(
+        console.log(
+          "(NOBRIDGE) LOG getPedidos - Dados recebidos do Firebase:",
           data
-            ? Object.entries(data).map(([id, value]) => ({ id, ...value }))
-            : []
         );
+        const pedidos = data
+          ? Object.entries(data).map(([id, value]) => ({ id, ...value }))
+          : [];
+        console.log(
+          "(NOBRIDGE) LOG getPedidos - Pedidos processados:",
+          pedidos
+        );
+        callback(pedidos);
       },
       (error) => {
-        console.error("Erro em getPedidos:", error);
+        console.error("(NOBRIDGE) ERROR getPedidos - Erro no listener:", error);
         callback([]);
       }
     );
@@ -144,12 +127,11 @@ export const getPedidos = (callback) => {
   setupListener();
   return () => {
     if (ref) {
-      console.log("Desmontando listener de pedidos");
+      console.log("(NOBRIDGE) LOG Desmontando listener de pedidos");
       ref.off("value");
     }
   };
 };
-
 export const atualizarMesa = async (mesaId, updates) => {
   const freshDb = await waitForFirebaseInit();
   await waitForConnection(freshDb);

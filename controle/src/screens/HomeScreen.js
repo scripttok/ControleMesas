@@ -151,16 +151,21 @@ export default function HomeScreen() {
       posX: 0,
       posY: 0,
       status: "aberta",
-      createdAt: new Date().toISOString(), // Valor temporário, será sobrescrito pelo Firebase
+      createdAt: new Date().toISOString(),
     };
-    console.log("novaMesa:", novaMesa);
+    console.log(
+      "(NOBRIDGE) LOG adicionarMesa - Adicionando nova mesa:",
+      novaMesa
+    );
     try {
-      const newMesaId = await adicionarMesaNoFirebase(novaMesa);
-      // Atualizar o estado local imediatamente
-      setMesas((prevMesas) => [...prevMesas, { ...novaMesa, id: newMesaId }]);
+      await adicionarMesaNoFirebase(novaMesa);
+      // Removido setMesas local para evitar duplicação
       setModalVisible(false);
     } catch (error) {
-      console.error("Erro ao adicionar mesa:", error);
+      console.error(
+        "(NOBRIDGE) ERROR adicionarMesa - Erro ao adicionar mesa:",
+        error
+      );
       Alert.alert(
         "Erro",
         "Não foi possível adicionar a mesa: " + error.message
@@ -600,24 +605,30 @@ export default function HomeScreen() {
         onChangeText={setSearchText}
       />
       <ScrollView contentContainerStyle={styles.grade}>
-        {mesas
-          .filter((mesa) =>
-            mesa.nomeCliente.toLowerCase().includes(searchText.toLowerCase())
-          )
-          .sort((a, b) => a.nomeCliente.localeCompare(b.nomeCliente))
-          .map((mesa) => {
-            const mesaPedidos = pedidos.filter((p) => p.mesa === mesa.id);
-            return (
-              <Mesa
-                key={mesa.id}
-                mesa={mesa}
-                pedidos={mesaPedidos}
-                onMove={moverMesa}
-                onDrop={soltarMesa}
-                onVerPedidos={verPedidos}
-              />
-            );
-          })}
+        {[
+          ...new Map(
+            mesas
+              .filter((mesa) =>
+                mesa.nomeCliente
+                  .toLowerCase()
+                  .includes(searchText.toLowerCase())
+              )
+              .sort((a, b) => a.nomeCliente.localeCompare(b.nomeCliente))
+              .map((mesa) => [mesa.id, mesa])
+          ).values(),
+        ].map((mesa) => {
+          const mesaPedidos = pedidos.filter((p) => p.mesa === mesa.id);
+          return (
+            <Mesa
+              key={mesa.id}
+              mesa={mesa}
+              pedidos={mesaPedidos}
+              onMove={moverMesa}
+              onDrop={soltarMesa}
+              onVerPedidos={verPedidos}
+            />
+          );
+        })}
       </ScrollView>
 
       <AdicionarMesaModal
