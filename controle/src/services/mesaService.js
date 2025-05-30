@@ -55,32 +55,61 @@ export const getMesas = (callback) => {
       return;
     }
     ref = freshDb.ref("mesas");
+    let initialLoad = false;
+
+    // Carrega o snapshot inicial
     ref.on(
       "value",
       (snapshot) => {
         const data = snapshot.val();
-        console.log("Mesas recebidas:", data);
-        callback(
-          data
-            ? Object.entries(data).map(([id, value]) => ({
-                id,
-                ...value,
-                nomeCliente: value.nomeCliente || `Mesa ${id}`,
-              }))
-            : []
-        );
+        console.log("Mesas recebidas (value):", data);
+        const mesas = data
+          ? Object.entries(data).map(([id, value]) => ({
+              id,
+              ...value,
+              nomeCliente: value.nomeCliente || `Mesa ${id}`,
+            }))
+          : [];
+        callback(mesas);
+        initialLoad = true;
       },
       (error) => {
-        console.error("Erro em getMesas:", error);
+        console.error("Erro em getMesas (value):", error);
         callback([]);
+      }
+    );
+
+    // Escuta novas mesas adicionadas
+    ref.on(
+      "child_added",
+      (snapshot) => {
+        if (initialLoad) {
+          const newMesa = {
+            id: snapshot.key,
+            ...snapshot.val(),
+            nomeCliente: snapshot.val().nomeCliente || `Mesa ${snapshot.key}`,
+          };
+          console.log("Nova mesa adicionada (child_added):", newMesa);
+          callback((prevMesas) => {
+            // Evita duplicação se a mesa já está no estado
+            if (prevMesas.some((m) => m.id === newMesa.id)) {
+              return prevMesas;
+            }
+            return [...prevMesas, newMesa];
+          });
+        }
+      },
+      (error) => {
+        console.error("Erro em getMesas (child_added):", error);
       }
     );
   };
   setupListener();
   return () => {
     if (ref) {
-      console.log("Desmontando listener de mesas");
+      console.log("Desmontando listeners de mesas");
       ref.off("value");
+      ref.off("child_added");
     }
   };
 };
