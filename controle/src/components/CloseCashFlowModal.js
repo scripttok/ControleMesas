@@ -100,41 +100,41 @@ const CloseCashFlowModal = ({ visible, onClose, cashFlowId, onSuccess }) => {
           <TextInput
             style={styles.input}
             placeholder="Valor Final (R$)"
+            placeholderTextColor="#000"
             value={closeAmount}
             onChangeText={setCloseAmount}
             keyboardType="numeric"
-            placeholderTextColor="#888"
           />
           <TextInput
             style={styles.input}
             placeholder="Total em Dinheiro (R$)"
+            placeholderTextColor="#000"
             value={cashPayments}
             onChangeText={setCashPayments}
             keyboardType="numeric"
-            placeholderTextColor="#888"
           />
           <TextInput
             style={styles.input}
             placeholder="Total em Cartão (R$)"
+            placeholderTextColor="#000"
             value={cardPayments}
             onChangeText={setCardPayments}
             keyboardType="numeric"
-            placeholderTextColor="#888"
           />
           <TextInput
             style={styles.input}
             placeholder="Total em Pix (R$)"
+            placeholderTextColor="#000"
             value={pixPayments}
             onChangeText={setPixPayments}
             keyboardType="numeric"
-            placeholderTextColor="#888"
           />
           <TextInput
             style={styles.input}
             placeholder="Observações"
+            placeholderTextColor="#000"
             value={observations}
             onChangeText={setObservations}
-            placeholderTextColor="#888"
           />
           <View style={styles.buttonContainer}>
             <Button title="Confirmar" onPress={handleSubmit} color="#FFA500" />

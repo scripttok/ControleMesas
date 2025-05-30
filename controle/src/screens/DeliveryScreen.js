@@ -411,7 +411,7 @@ const DeliveryScreen = () => {
           keyboardType="numeric"
           value={item.orderQuantity.toString()}
           onChangeText={(text) => updateItemQuantity(item.id, text)}
-          placeholderTextColor="#888"
+          placeholderTextColor="#000"
           returnKeyType="done"
           onSubmitEditing={() => {}}
         />
@@ -450,7 +450,7 @@ const DeliveryScreen = () => {
             placeholder="Buscar item por nome"
             value={searchQuery}
             onChangeText={handleSearch}
-            placeholderTextColor="#888"
+            placeholderTextColor="#000"
             returnKeyType="search"
             onSubmitEditing={() => {}}
           />
@@ -522,7 +522,7 @@ const DeliveryScreen = () => {
           placeholder="Nome"
           value={clientData.name}
           onChangeText={updateClientName}
-          placeholderTextColor="#888"
+          placeholderTextColor="#000"
           returnKeyType="next"
           onSubmitEditing={() => {}}
         />
@@ -531,7 +531,7 @@ const DeliveryScreen = () => {
           placeholder="Telefone"
           value={clientData.phone}
           onChangeText={updateClientPhone}
-          placeholderTextColor="#888"
+          placeholderTextColor="#000"
           keyboardType="phone-pad"
           returnKeyType="next"
           onSubmitEditing={() => {}}
@@ -541,7 +541,7 @@ const DeliveryScreen = () => {
           placeholder="CPF (opcional)"
           value={clientData.cpf}
           onChangeText={updateClientCpf}
-          placeholderTextColor="#888"
+          placeholderTextColor="#000"
           keyboardType="numeric"
           returnKeyType="done"
           onSubmitEditing={() => {}}
@@ -558,7 +558,7 @@ const DeliveryScreen = () => {
           placeholder="Endereço"
           value={deliveryData.address}
           onChangeText={updateDeliveryAddress}
-          placeholderTextColor="#888"
+          placeholderTextColor="#000"
           returnKeyType="next"
           onSubmitEditing={() => {}}
         />
@@ -567,7 +567,7 @@ const DeliveryScreen = () => {
           placeholder="Bairro"
           value={deliveryData.neighborhood}
           onChangeText={updateDeliveryNeighborhood}
-          placeholderTextColor="#888"
+          placeholderTextColor="#000"
           returnKeyType="next"
           onSubmitEditing={() => {}}
         />
@@ -576,7 +576,7 @@ const DeliveryScreen = () => {
           placeholder="Ponto de Referência"
           value={deliveryData.reference}
           onChangeText={updateDeliveryReference}
-          placeholderTextColor="#888"
+          placeholderTextColor="#000"
           returnKeyType="done"
           onSubmitEditing={() => {}}
         />

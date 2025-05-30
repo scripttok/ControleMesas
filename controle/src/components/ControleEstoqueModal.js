@@ -219,6 +219,7 @@ export default function ControleEstoqueModal({ visible, onClose }) {
             <TextInput
               style={styles.searchInput}
               placeholder="Buscar item"
+              placeholderTextColor="#000"
               value={searchText}
               onChangeText={setSearchText}
             />
@@ -245,6 +246,7 @@ export default function ControleEstoqueModal({ visible, onClose }) {
                 <TextInput
                   style={styles.input}
                   placeholder="Nome"
+                  placeholderTextColor="#000"
                   value={itemEditando.nome}
                   onChangeText={(text) =>
                     setItemEditando({ ...itemEditando, nome: text })
@@ -253,6 +255,7 @@ export default function ControleEstoqueModal({ visible, onClose }) {
                 <TextInput
                   style={styles.input}
                   placeholder="Quantidade"
+                  placeholderTextColor="#000"
                   value={itemEditando.quantidade}
                   keyboardType="numeric"
                   onChangeText={(text) =>
@@ -262,6 +265,7 @@ export default function ControleEstoqueModal({ visible, onClose }) {
                 <TextInput
                   style={styles.input}
                   placeholder="Unidade (ex: unidades, kg)"
+                  placeholderTextColor="#000"
                   value={itemEditando.unidade}
                   onChangeText={(text) =>
                     setItemEditando({ ...itemEditando, unidade: text })
@@ -270,6 +274,7 @@ export default function ControleEstoqueModal({ visible, onClose }) {
                 <TextInput
                   style={styles.input}
                   placeholder="Preço (ex: 5.50)"
+                  placeholderTextColor="#000"
                   value={itemEditando.precoUnitario} // Já é string aqui
                   keyboardType="numeric"
                   onChangeText={(text) =>
@@ -279,6 +284,7 @@ export default function ControleEstoqueModal({ visible, onClose }) {
                 <TextInput
                   style={styles.input}
                   placeholder="Categoria"
+                  placeholderTextColor="#000"
                   value={itemEditando.categoria}
                   onChangeText={(text) =>
                     setItemEditando({ ...itemEditando, categoria: text })

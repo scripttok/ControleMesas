@@ -60,10 +60,10 @@ const AddMovementModal = ({ visible, onClose, cashFlowId, onSuccess }) => {
           <TextInput
             style={styles.input}
             placeholder="Valor (R$)"
+            placeholderTextColor="#000"
             value={amount}
             onChangeText={setAmount}
             keyboardType="numeric"
-            placeholderTextColor="#888"
           />
           {type === "entry" && (
             <Picker
@@ -80,9 +80,9 @@ const AddMovementModal = ({ visible, onClose, cashFlowId, onSuccess }) => {
           <TextInput
             style={styles.input}
             placeholder="Descrição"
+            placeholderTextColor="#000"
             value={description}
             onChangeText={setDescription}
-            placeholderTextColor="#888"
           />
           <View style={styles.buttonContainer}>
             <Button title="Confirmar" onPress={handleSubmit} color="#FFA500" />

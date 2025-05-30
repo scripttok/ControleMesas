@@ -39,17 +39,17 @@ const OpenCashFlowModal = ({ visible, onClose, onSuccess }) => {
           <TextInput
             style={styles.input}
             placeholder="Nome do Operador"
+            placeholderTextColor="#000"
             value={operatorName}
             onChangeText={setOperatorName}
-            placeholderTextColor="#888"
           />
           <TextInput
             style={styles.input}
             placeholder="Valor Inicial (R$)"
+            placeholderTextColor="#000"
             value={openAmount}
             onChangeText={setOpenAmount}
             keyboardType="numeric"
-            placeholderTextColor="#888"
           />
           <View style={styles.buttonContainer}>
             <Button title="Confirmar" onPress={handleSubmit} color="#FFA500" />

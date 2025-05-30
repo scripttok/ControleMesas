@@ -126,10 +126,10 @@ function DrawerContent({ navigation }) {
             <TextInput
               style={styles.passwordInput}
               placeholder="Senha"
+              placeholderTextColor="#000"
               secureTextEntry
               value={password}
               onChangeText={setPassword}
-              placeholderTextColor="#888"
             />
             <View style={styles.modalButtons}>
               <Button

@@ -59,18 +59,21 @@ export default function GerenciarFichasTecnicasModal({ visible, onClose }) {
           <TextInput
             style={styles.input}
             placeholder="Item do Cardápio (ex.: Suco de laranja)"
+            placeholderTextColor="#000"
             value={novoItemCardapio}
             onChangeText={setNovoItemCardapio}
           />
           <TextInput
             style={styles.input}
             placeholder="Item do Estoque (ex.: Suco de laranja)"
+            placeholderTextColor="#000"
             value={novoItemEstoque}
             onChangeText={setNovoItemEstoque}
           />
           <TextInput
             style={styles.input}
             placeholder="Quantidade por Unidade (ex.: 1)"
+            placeholderTextColor="#000"
             value={quantidadePorUnidade}
             keyboardType="numeric"
             onChangeText={setQuantidadePorUnidade}

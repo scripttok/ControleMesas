@@ -595,7 +595,7 @@ export default function HomeScreen() {
       <TextInput
         style={styles.searchInput}
         placeholder="Buscar por nome do cliente"
-        placeholderTextColor="#aaa"
+        placeholderTextColor="#000"
         value={searchText}
         onChangeText={setSearchText}
       />

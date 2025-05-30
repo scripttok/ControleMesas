@@ -510,10 +510,10 @@ export default function FecharComandaModal({
             <TextInput
               style={styles.input}
               placeholder="Digite o desconto (ex.: 10.00)"
+              placeholderTextColor="#000"
               keyboardType="numeric"
               value={desconto}
               onChangeText={(text) => setDesconto(text.replace(/[^0-9.]/g, ""))}
-              placeholderTextColor="#888"
             />
             <Text style={styles.totalGeral}>
               Total com desconto: R$ {calcularTotalComDesconto()}
@@ -522,10 +522,10 @@ export default function FecharComandaModal({
             <TextInput
               style={styles.input}
               placeholder="Ex.: 1"
+              placeholderTextColor="#000"
               keyboardType="numeric"
               value={divisao}
               onChangeText={(text) => setDivisao(text.replace(/[^0-9]/g, ""))}
-              placeholderTextColor="#888"
             />
             <Text style={styles.divisao}>
               Valor por parte: R$ {calcularDivisao()}
@@ -534,23 +534,23 @@ export default function FecharComandaModal({
             <TextInput
               style={styles.input}
               placeholder="Digite o valor pago (ex.: 15.00)"
+              placeholderTextColor="#000"
               keyboardType="numeric"
               value={valorPago}
               onChangeText={(text) =>
                 setValorPago(text.replace(/[^0-9.]/g, ""))
               }
-              placeholderTextColor="#888"
             />
             <Text style={styles.label}>Valor Recebido:</Text>
             <TextInput
               style={styles.input}
               placeholder="Digite o valor recebido (ex.: 50.00)"
+              placeholderTextColor="#000"
               keyboardType="numeric"
               value={valorRecebido}
               onChangeText={(text) =>
                 setValorRecebido(text.replace(/[^0-9.]/g, ""))
               }
-              placeholderTextColor="#888"
             />
 
             {!isPagamentoSuficiente() && isPagamentoParcial() && (
@@ -570,10 +570,10 @@ export default function FecharComandaModal({
             <TextInput
               style={styles.input}
               placeholder="Número do Cliente (ex.: 11987654321)"
+              placeholderTextColor="#000"
               keyboardType="phone-pad"
               value={telefoneCliente}
               onChangeText={setTelefoneCliente}
-              placeholderTextColor="#888"
             />
             <View style={styles.botoes}>
               <CustomButton

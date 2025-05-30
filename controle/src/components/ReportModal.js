@@ -335,17 +335,17 @@ const ReportModal = ({ visible, onClose }) => {
       <TextInput
         style={styles.input}
         placeholder="Ex: 2025-05-04"
+        placeholderTextColor="#000"
         value={startDate}
         onChangeText={setStartDate}
-        placeholderTextColor="#888"
       />
       <Text style={styles.label}>Data Final (YYYY-MM-DD)</Text>
       <TextInput
         style={styles.input}
         placeholder="Ex: 2025-05-04"
+        placeholderTextColor="#000"
         value={endDate}
         onChangeText={setEndDate}
-        placeholderTextColor="#888"
       />
 
       <Text style={styles.label}>Tipo de Movimentação</Text>

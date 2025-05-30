@@ -120,12 +120,14 @@ export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
             <TextInput
               style={styles.input}
               placeholder="Nome do item (ex.: Cerveja)"
+              placeholderTextColor="#000"
               value={nomeEstoque}
               onChangeText={setNomeEstoque}
             />
             <TextInput
               style={styles.input}
               placeholder="Quantidade (ex.: 10)"
+              placeholderTextColor="#000"
               value={quantidadeEstoque}
               keyboardType="numeric"
               onChangeText={setQuantidadeEstoque}
@@ -133,18 +135,21 @@ export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
             <TextInput
               style={styles.input}
               placeholder="Unidade (ex.: unidades)"
+              placeholderTextColor="#000"
               value={unidadeEstoque}
               onChangeText={setUnidadeEstoque}
             />
             <TextInput
               style={styles.input}
               placeholder="Descrição (ex.: Lata 350ml)"
+              placeholderTextColor="#000"
               value={descricao}
               onChangeText={setDescricao}
             />
             <TextInput
               style={styles.input}
               placeholder="Estoque Mínimo (ex.: 2)"
+              placeholderTextColor="#000"
               value={estoqueMinimo}
               keyboardType="numeric"
               onChangeText={setEstoqueMinimo}
@@ -152,6 +157,7 @@ export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
             <TextInput
               style={styles.input}
               placeholder="Preço Unitário (ex.: 5.00)"
+              placeholderTextColor="#000"
               value={precoUnitario}
               keyboardType="numeric"
               onChangeText={setPrecoUnitario}

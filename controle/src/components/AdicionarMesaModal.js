@@ -25,6 +25,7 @@ export default function AdicionarMesaModal({ visible, onClose, onAdicionar }) {
           <TextInput
             style={styles.input}
             placeholder="Nome do Cliente"
+            placeholderTextColor="#000"
             value={nomeCliente}
             onChangeText={setNomeCliente}
           />
