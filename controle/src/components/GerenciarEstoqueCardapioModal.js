@@ -165,6 +165,7 @@ export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
             <Picker
               selectedValue={categoria}
               style={styles.picker}
+              itemStyle={styles.itemStyle} // Estilo para os itens da lista
               onValueChange={(itemValue) => setCategoria(itemValue)}
             >
               <Picker.Item label="Selecione uma categoria" value="" />
@@ -227,6 +228,11 @@ const styles = StyleSheet.create({
     height: 50,
     width: "100%",
     marginBottom: 10,
+    color: "#000", // Cor do texto do item selecionado (azul)
+  },
+  itemStyle: {
+    color: "#FF0000", // Cor do texto dos itens na lista suspensa (vermelho)
+    fontSize: 16,
   },
   botoes: {
     flexDirection: "row",

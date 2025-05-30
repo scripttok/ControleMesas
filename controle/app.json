@@ -2,7 +2,7 @@
   "expo": {
     "name": "Praça 43",
     "slug": "controle",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -56,6 +56,6 @@
         "projectId": "870c5fc9-a66c-48e5-9b03-a066714d88b4"
       }
     },
-    "runtimeVersion": "1.0.0"
+    "runtimeVersion": "1.0.1"
   }
 }

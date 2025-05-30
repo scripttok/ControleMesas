@@ -151,16 +151,21 @@ export default function HomeScreen() {
       posX: 0,
       posY: 0,
       status: "aberta",
-      createdAt: new Date().toISOString(),
+      createdAt: firebase.database.ServerValue.TIMESTAMP, // Alinha com adicionarMesaNoFirebase
     };
     console.log(
       "(NOBRIDGE) LOG adicionarMesa - Adicionando nova mesa:",
       novaMesa
     );
     try {
-      await adicionarMesaNoFirebase(novaMesa);
-      // Removido setMesas local para evitar duplicação
+      const novaMesaId = await adicionarMesaNoFirebase(novaMesa); // Obtém o ID
+      // Adiciona a nova mesa ao estado local
+      setMesas((prevMesas) => [
+        ...prevMesas,
+        { ...novaMesa, id: novaMesaId, createdAt: new Date().toISOString() }, // createdAt local para UI
+      ]);
       setModalVisible(false);
+      Alert.alert("Sucesso", "Mesa adicionada com sucesso!");
     } catch (error) {
       console.error(
         "(NOBRIDGE) ERROR adicionarMesa - Erro ao adicionar mesa:",
@@ -592,9 +597,7 @@ export default function HomeScreen() {
             color="#FFF"
             style={styles.chefHatIcon}
           />
-          {/* <Text style={styles.titulo}>Arena CRB</Text>
-           */}
-          <Text style={styles.titulo}>Adega & Restaurante</Text>
+          <Text style={styles.titulo}>Adega e Restaurante</Text>
         </View>
       </View>
       <TextInput

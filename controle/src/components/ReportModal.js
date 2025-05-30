@@ -514,6 +514,7 @@ const styles = StyleSheet.create({
   picker: {
     width: "100%",
     height: 44,
+    color: "#red",
   },
   errorText: {
     color: "#D32F2F",
