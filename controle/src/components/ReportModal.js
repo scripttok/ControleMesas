@@ -353,6 +353,7 @@ const ReportModal = ({ visible, onClose }) => {
         <Picker
           selectedValue={typeFilter}
           style={styles.picker}
+          itemStyle={styles.itemStyle}
           onValueChange={(value) => setTypeFilter(value)}
         >
           <Picker.Item label="Todos os Tipos" value="" />
@@ -366,6 +367,7 @@ const ReportModal = ({ visible, onClose }) => {
         <Picker
           selectedValue={paymentMethodFilter}
           style={styles.picker}
+          itemStyle={styles.itemStyle}
           onValueChange={(value) => setPaymentMethodFilter(value)}
         >
           <Picker.Item label="Todos os Métodos" value="" />
@@ -513,9 +515,10 @@ const styles = StyleSheet.create({
   },
   picker: {
     width: "100%",
-    height: 44,
-    color: "#red",
+    height: 60,
+    color: "black",
   },
+
   errorText: {
     color: "#D32F2F",
     marginBottom: 10,

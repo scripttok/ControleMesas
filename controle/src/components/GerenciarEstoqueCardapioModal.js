@@ -225,10 +225,9 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   picker: {
-    height: 50,
     width: "100%",
-    marginBottom: 10,
-    color: "#000", // Cor do texto do item selecionado (azul)
+    height: 60,
+    color: "black",
   },
   itemStyle: {
     color: "#FF0000", // Cor do texto dos itens na lista suspensa (vermelho)
