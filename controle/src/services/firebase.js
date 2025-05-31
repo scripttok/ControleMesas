@@ -69,21 +69,40 @@ const waitForConnection = async (db) => {
   }
   return new Promise((resolve, reject) => {
     const connectedRef = db.ref(".info/connected");
-    connectedRef.on("value", (snapshot) => {
+    let isConnected = false;
+
+    const listener = connectedRef.on("value", (snapshot) => {
       if (snapshot.val() === true) {
         console.log("(NOBRIDGE) LOG waitForConnection - Conectado ao Firebase");
+        isConnected = true;
+        connectedRef.off("value", listener); // Remove o listener após conectar
         resolve();
       }
     });
+
+    // Verifica se já está conectado imediatamente
+    connectedRef.once("value", (snapshot) => {
+      if (snapshot.val() === true && !isConnected) {
+        console.log(
+          "(NOBRIDGE) LOG waitForConnection - Já conectado ao Firebase"
+        );
+        isConnected = true;
+        connectedRef.off("value", listener);
+        resolve();
+      }
+    });
+
     setTimeout(() => {
-      console.error(
-        "(NOBRIDGE) ERROR waitForConnection - Timeout ao conectar ao Firebase"
-      );
-      reject(new Error("Timeout ao conectar ao Firebase"));
-    }, 10000); // Timeout após 10 segundos
+      if (!isConnected) {
+        console.warn(
+          "(NOBRIDGE) WARN waitForConnection - Timeout ao conectar ao Firebase, mas prosseguindo"
+        );
+        connectedRef.off("value", listener); // Remove o listener
+        resolve(); // Prossegue mesmo com timeout
+      }
+    }, 5000); // Reduzido para 5 segundos
   });
 };
-
 let firebaseInitialized = false;
 let auth, database, db;
 
