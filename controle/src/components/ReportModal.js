@@ -366,7 +366,7 @@ const ReportModal = ({ visible, onClose }) => {
       <View style={styles.pickerContainer}>
         <Picker
           selectedValue={paymentMethodFilter}
-          style={styles.picker}
+          // style={styles.picker}
           itemStyle={styles.itemStyle}
           onValueChange={(value) => setPaymentMethodFilter(value)}
         >
@@ -517,6 +517,10 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 60,
     color: "black",
+  },
+  itemStyle: {
+    color: "black", // Cor do texto dos itens na lista suspensa (vermelho)
+    fontSize: 16,
   },
 
   errorText: {

@@ -608,7 +608,7 @@ export default function HomeScreen() {
             color="#FFF"
             style={styles.chefHatIcon}
           />
-          <Text style={styles.titulo}>Adega & Restaurante</Text>
+          <Text style={styles.titulo}>Adega && Restaurante</Text>
         </View>
       </View>
       <TextInput

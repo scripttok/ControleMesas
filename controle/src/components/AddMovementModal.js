@@ -69,7 +69,7 @@ const AddMovementModal = ({ visible, onClose, cashFlowId, onSuccess }) => {
           {type === "entry" && (
             <Picker
               selectedValue={paymentMethod}
-              style={styles.picker}
+              // style={styles.picker}
               itemStyle={styles.itemStyle}
               onValueChange={(value) => setPaymentMethod(value)}
             >
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     color: "black",
   },
   itemStyle: {
-    color: "#FF0000", // Cor do texto dos itens na lista suspensa (vermelho)
+    color: "black", // Cor do texto dos itens na lista suspensa (vermelho)
     fontSize: 16,
   },
   errorText: {
