@@ -1,19 +1,51 @@
 import React, { useState } from "react";
-import { Modal, View, Text, TextInput, Button, StyleSheet } from "react-native";
+import {
+  Modal,
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  Alert,
+} from "react-native";
 
-// Single Responsibility: Gerenciar o formulário de adicionar mesa
 export default function AdicionarMesaModal({ visible, onClose, onAdicionar }) {
   const [nomeCliente, setNomeCliente] = useState("");
-  const [numeroMesa, setNumeroMesa] = useState("");
 
-  const handleAdicionar = () => {
+  const handleAdicionar = async () => {
+    console.log(
+      "(NOBRIDGE) LOG AdicionarMesaModal - handleAdicionar - Nome do cliente:",
+      nomeCliente
+    );
     if (nomeCliente) {
-      onAdicionar({ nomeCliente });
-      setNomeCliente("");
-      // setNumeroMesa("");
-      onClose();
+      try {
+        console.log("(NOBRIDGE) LOG AdicionarMesaModal - Chamando onAdicionar");
+        await onAdicionar({ nomeCliente });
+        console.log(
+          "(NOBRIDGE) LOG AdicionarMesaModal - onAdicionar concluído"
+        );
+        Alert.alert("Sucesso", "Mesa adicionada com sucesso!", [
+          {
+            text: "OK",
+            onPress: () => {
+              setNomeCliente("");
+              onClose();
+            },
+          },
+        ]);
+      } catch (error) {
+        console.error(
+          "(NOBRIDGE) ERROR AdicionarMesaModal - Erro ao adicionar:",
+          error
+        );
+        Alert.alert(
+          "Erro",
+          `Não foi possível adicionar a mesa: ${error.message}`
+        );
+      }
     } else {
-      alert("Preencha todos os campos!");
+      console.log("(NOBRIDGE) LOG AdicionarMesaModal - Campos não preenchidos");
+      Alert.alert("Erro", "Preencha todos os campos!");
     }
   };
 
@@ -29,13 +61,6 @@ export default function AdicionarMesaModal({ visible, onClose, onAdicionar }) {
             value={nomeCliente}
             onChangeText={setNomeCliente}
           />
-          {/* <TextInput
-            style={styles.input}
-            placeholder="Número da Mesa"
-            value={numeroMesa}
-            onChangeText={setNumeroMesa}
-            keyboardType="numeric"
-          /> */}
           <View style={styles.botoes}>
             <Button title="Cancelar" onPress={onClose} color="#ff4444" />
             <Button title="Adicionar" onPress={handleAdicionar} />
@@ -45,7 +70,6 @@ export default function AdicionarMesaModal({ visible, onClose, onAdicionar }) {
     </Modal>
   );
 }
-
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,

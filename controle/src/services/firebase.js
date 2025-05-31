@@ -60,6 +60,30 @@ const firebaseConfig = {
 // };
 // Inicializa o Firebase para Firestore
 
+const waitForConnection = async (db) => {
+  if (!db) {
+    console.error(
+      "(NOBRIDGE) ERROR waitForConnection - Database não fornecida"
+    );
+    throw new Error("Database não fornecida");
+  }
+  return new Promise((resolve, reject) => {
+    const connectedRef = db.ref(".info/connected");
+    connectedRef.on("value", (snapshot) => {
+      if (snapshot.val() === true) {
+        console.log("(NOBRIDGE) LOG waitForConnection - Conectado ao Firebase");
+        resolve();
+      }
+    });
+    setTimeout(() => {
+      console.error(
+        "(NOBRIDGE) ERROR waitForConnection - Timeout ao conectar ao Firebase"
+      );
+      reject(new Error("Timeout ao conectar ao Firebase"));
+    }, 10000); // Timeout após 10 segundos
+  });
+};
+
 let firebaseInitialized = false;
 let auth, database, db;
 
@@ -464,4 +488,5 @@ export {
   getCashFlowReport,
   getCashFlowMovementsReport,
   waitForFirebaseInit,
+  waitForConnection,
 };

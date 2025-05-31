@@ -23,6 +23,11 @@ import {
   useFocusEffect,
   useRoute,
 } from "@react-navigation/native";
+
+import firebase from "firebase/compat/app";
+import "firebase/compat/database";
+
+import "../services/firebase";
 import {
   adicionarMesaNoFirebase,
   getMesas,
@@ -136,12 +141,23 @@ export default function HomeScreen() {
       return cleanupListeners;
     }, [setupListeners, cleanupListeners])
   );
-
   const adicionarMesa = async ({ nomeCliente }) => {
+    console.log(
+      "(NOBRIDGE) LOG adicionarMesa - Iniciando, nomeCliente:",
+      nomeCliente
+    );
+    console.log(
+      "(NOBRIDGE) LOG adicionarMesa - firebase.database.ServerValue:",
+      firebase.database.ServerValue
+    );
     const mesaNomeExistente = mesas.find(
       (mesa) => mesa.nomeCliente === nomeCliente
     );
     if (mesaNomeExistente) {
+      console.log(
+        "(NOBRIDGE) LOG adicionarMesa - Mesa existente encontrada:",
+        mesaNomeExistente
+      );
       Alert.alert("Erro", `Já existe uma mesa com o cliente "${nomeCliente}".`);
       return;
     }
@@ -151,21 +167,16 @@ export default function HomeScreen() {
       posX: 0,
       posY: 0,
       status: "aberta",
-      createdAt: firebase.database.ServerValue.TIMESTAMP, // Alinha com adicionarMesaNoFirebase
+      createdAt: firebase.database.ServerValue.TIMESTAMP,
     };
-    console.log(
-      "(NOBRIDGE) LOG adicionarMesa - Adicionando nova mesa:",
-      novaMesa
-    );
+    console.log("(NOBRIDGE) LOG adicionarMesa - Nova mesa criada:", novaMesa);
     try {
-      const novaMesaId = await adicionarMesaNoFirebase(novaMesa); // Obtém o ID
-      // Adiciona a nova mesa ao estado local
-      setMesas((prevMesas) => [
-        ...prevMesas,
-        { ...novaMesa, id: novaMesaId, createdAt: new Date().toISOString() }, // createdAt local para UI
-      ]);
+      console.log(
+        "(NOBRIDGE) LOG adicionarMesa - Chamando adicionarMesaNoFirebase"
+      );
+      await adicionarMesaNoFirebase(novaMesa);
+      console.log("(NOBRIDGE) LOG adicionarMesa - Mesa adicionada com sucesso");
       setModalVisible(false);
-      Alert.alert("Sucesso", "Mesa adicionada com sucesso!");
     } catch (error) {
       console.error(
         "(NOBRIDGE) ERROR adicionarMesa - Erro ao adicionar mesa:",
@@ -173,7 +184,7 @@ export default function HomeScreen() {
       );
       Alert.alert(
         "Erro",
-        "Não foi possível adicionar a mesa: " + error.message
+        `Não foi possível adicionar a mesa: ${error.message}`
       );
     }
   };
