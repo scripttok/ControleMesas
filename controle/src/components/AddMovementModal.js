@@ -69,7 +69,7 @@ const AddMovementModal = ({ visible, onClose, cashFlowId, onSuccess }) => {
           {type === "entry" && (
             <Picker
               selectedValue={paymentMethod}
-              // style={styles.picker}
+              style={styles.picker}
               itemStyle={styles.itemStyle}
               onValueChange={(value) => setPaymentMethod(value)}
             >

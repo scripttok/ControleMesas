@@ -164,7 +164,7 @@ export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
             />
             <Picker
               selectedValue={categoria}
-              // style={styles.picker}
+              style={styles.picker}
               itemStyle={styles.itemStyle} // Estilo para os itens da lista
               onValueChange={(itemValue) => setCategoria(itemValue)}
             >

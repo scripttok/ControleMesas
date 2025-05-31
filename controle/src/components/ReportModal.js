@@ -366,7 +366,7 @@ const ReportModal = ({ visible, onClose }) => {
       <View style={styles.pickerContainer}>
         <Picker
           selectedValue={paymentMethodFilter}
-          // style={styles.picker}
+          style={styles.picker}
           itemStyle={styles.itemStyle}
           onValueChange={(value) => setPaymentMethodFilter(value)}
         >
