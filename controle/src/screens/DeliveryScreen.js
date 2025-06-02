@@ -18,10 +18,11 @@ import { waitForFirebaseInit, db, database } from "../services/firebase";
 import { printOrder } from "../services/printerService";
 import Icon from "react-native-vector-icons/MaterialIcons";
 
-// Wrapper para TextInput
+// Wrapper para TextInput com rótulo
 const FocusableTextInput = memo(
   ({
     style,
+    label,
     placeholder,
     value,
     onChangeText,
@@ -32,19 +33,22 @@ const FocusableTextInput = memo(
   }) => {
     console.log(`Rendering TextInput: ${placeholder}`);
     return (
-      <TextInput
-        style={style}
-        placeholder={placeholder}
-        value={value}
-        onChangeText={onChangeText}
-        placeholderTextColor={placeholderTextColor}
-        keyboardType={keyboardType}
-        blurOnSubmit={false}
-        autoCorrect={false}
-        autoCapitalize="none"
-        returnKeyType={returnKeyType}
-        onFocus={onFocus}
-      />
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>{label}</Text>
+        <TextInput
+          style={[styles.input, style, value ? styles.inputActive : null]}
+          placeholder={placeholder}
+          value={value}
+          onChangeText={onChangeText}
+          placeholderTextColor={placeholderTextColor}
+          keyboardType={keyboardType}
+          blurOnSubmit={false}
+          autoCorrect={false}
+          autoCapitalize="none"
+          returnKeyType={returnKeyType}
+          onFocus={onFocus}
+        />
+      </View>
     );
   },
   (prevProps, nextProps) => {
@@ -65,13 +69,14 @@ const SearchBar = memo(
     console.log("SearchBar render");
     return (
       <View style={styles.searchContainer}>
-        <Icon name="search" size={20} color="#888" style={styles.searchIcon} />
+        <Icon name="search" size={24} color="#888" style={styles.searchIcon} />
         <FocusableTextInput
+          label="Buscar Item"
           style={styles.searchInput}
-          placeholder="Buscar item por nome"
+          placeholder="Digite o nome do item"
           value={searchQuery}
           onChangeText={handleSearch}
-          placeholderTextColor="#000"
+          placeholderTextColor="#888"
           keyboardType="default"
           returnKeyType="none"
           onFocus={onInputFocus}
@@ -101,35 +106,35 @@ const ClientDataSection = memo(
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Icon name="person" size={24} color="#FF6F00" />
+          <Icon name="person" size={28} color="#FF6F00" />
           <Text style={styles.sectionTitle}>Dados do Cliente</Text>
         </View>
         <FocusableTextInput
-          style={styles.input}
-          placeholder="Nome"
+          label="Nome"
+          placeholder="Nome completo"
           value={clientData.name}
           onChangeText={updateClientName}
-          placeholderTextColor="#000"
+          placeholderTextColor="#888"
           keyboardType="default"
           returnKeyType="next"
           onFocus={onInputFocus}
         />
         <FocusableTextInput
-          style={styles.input}
-          placeholder="Telefone"
+          label="Telefone"
+          placeholder="(XX) XXXXX-XXXX"
           value={clientData.phone}
           onChangeText={updateClientPhone}
-          placeholderTextColor="#000"
+          placeholderTextColor="#888"
           keyboardType="phone-pad"
           returnKeyType="next"
           onFocus={onInputFocus}
         />
         <FocusableTextInput
-          style={styles.input}
-          placeholder="CPF (opcional)"
+          label="CPF (opcional)"
+          placeholder="XXX.XXX.XXX-XX"
           value={clientData.cpf}
           onChangeText={updateClientCpf}
-          placeholderTextColor="#000"
+          placeholderTextColor="#888"
           keyboardType="numeric"
           returnKeyType="done"
           onFocus={onInputFocus}
@@ -163,35 +168,35 @@ const DeliveryDataSection = memo(
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Icon name="location-on" size={24} color="#FF6F00" />
+          <Icon name="location-on" size={28} color="#FF6F00" />
           <Text style={styles.sectionTitle}>Dados de Entrega</Text>
         </View>
         <FocusableTextInput
-          style={styles.input}
-          placeholder="Endereço"
+          label="Endereço"
+          placeholder="Rua, número, complemento"
           value={deliveryData.address}
           onChangeText={updateDeliveryAddress}
-          placeholderTextColor="#000"
+          placeholderTextColor="#888"
           keyboardType="default"
           returnKeyType="next"
           onFocus={onInputFocus}
         />
         <FocusableTextInput
-          style={styles.input}
-          placeholder="Bairro"
+          label="Bairro"
+          placeholder="Nome do bairro"
           value={deliveryData.neighborhood}
           onChangeText={updateDeliveryNeighborhood}
-          placeholderTextColor="#000"
+          placeholderTextColor="#888"
           keyboardType="default"
           returnKeyType="next"
           onFocus={onInputFocus}
         />
         <FocusableTextInput
-          style={styles.input}
-          placeholder="Ponto de Referência"
+          label="Ponto de Referência"
+          placeholder="Ex.: Próximo à praça"
           value={deliveryData.reference}
           onChangeText={updateDeliveryReference}
-          placeholderTextColor="#000"
+          placeholderTextColor="#888"
           keyboardType="default"
           returnKeyType="done"
           onFocus={onInputFocus}
@@ -552,7 +557,7 @@ const DeliveryScreen = () => {
           style={styles.addButton}
           onPress={() => addItemToOrder(item)}
         >
-          <Icon name="add-circle" size={28} color="#FFF" />
+          <Icon name="add-circle" size={24} color="#FFF" />
           <Text style={styles.addButtonText}>Adicionar</Text>
         </TouchableOpacity>
       </View>
@@ -564,7 +569,7 @@ const DeliveryScreen = () => {
     ({ item, index }) => (
       <View key={`${item.id}-${index}`} style={styles.selectedItemCard}>
         <View style={styles.itemInfo}>
-          <Text style={styles.itemText} numberOfLines={2} ellipsizeMode="tail">
+          <Text style={styles.itemText} numberOfLines={1} ellipsizeMode="tail">
             {item.name}
           </Text>
           <Text style={styles.itemSubText}>
@@ -572,33 +577,34 @@ const DeliveryScreen = () => {
           </Text>
         </View>
         <View style={styles.quantityContainer}>
-          <Text style={styles.quantityLabel}>Qtd:</Text>
           <TouchableOpacity
             style={styles.quantityButton}
             onPress={() => decrementQuantity(item.id)}
           >
-            <Icon name="remove" size={20} color="#FFF" />
+            <Icon name="remove" size={18} color="#FFF" />
           </TouchableOpacity>
           <FocusableTextInput
             style={styles.quantityInput}
             keyboardType="numeric"
             value={item.orderQuantity.toString()}
             onChangeText={(text) => updateItemQuantity(item.id, text)}
-            placeholderTextColor="#000"
+            placeholderTextColor="#888"
             returnKeyType="done"
             onFocus={handleInputFocus}
+            label=""
+            placeholder=""
           />
           <TouchableOpacity
             style={[styles.quantityButton, styles.incrementButton]}
             onPress={() => incrementQuantity(item.id)}
           >
-            <Icon name="add" size={20} color="#FFF" />
+            <Icon name="add" size={18} color="#FFF" />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.removeButton}
             onPress={() => removeItem(item.id)}
           >
-            <Icon name="delete" size={24} color="#FFF" />
+            <Icon name="delete" size={20} color="#FFF" />
           </TouchableOpacity>
         </View>
       </View>
@@ -618,8 +624,8 @@ const DeliveryScreen = () => {
       <View>
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Icon name="shopping-cart" size={24} color="#FF6F00" />
-            <Text style={styles.sectionTitle}>Itens do Pedido</Text>
+            <Icon name="shopping-cart" size={28} color="#FF6F00" />
+            <Text style={styles.sectionTitle}>Itens Disponíveis</Text>
           </View>
           {filteredItems.length === 0 && !loading && !error ? (
             <Text style={styles.infoText}>
@@ -633,14 +639,20 @@ const DeliveryScreen = () => {
     );
   }, [filteredItems, loading, error, searchQuery]);
 
-  const renderFooter = useCallback(
-    () => (
+  const renderFooter = useCallback(() => {
+    const total = selectedItems.reduce(
+      (sum, item) => sum + item.price * item.orderQuantity,
+      0
+    );
+    return (
       <>
         {selectedItems.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Icon name="check-circle" size={24} color="#FF6F00" />
-              <Text style={styles.sectionTitle}>Itens Selecionados</Text>
+              <Icon name="check-circle" size={28} color="#FF6F00" />
+              <Text style={styles.sectionTitle}>
+                Itens Selecionados ({selectedItems.length})
+              </Text>
             </View>
             <View style={styles.list}>
               {selectedItems.map((item, index) =>
@@ -649,21 +661,27 @@ const DeliveryScreen = () => {
             </View>
           </View>
         )}
-
-        <TouchableOpacity
-          style={[styles.confirmButton, loading && styles.disabledButton]}
-          onPress={confirmOrder}
-          disabled={loading}
-        >
-          <Text style={styles.confirmButtonText}>
-            {loading ? "Confirmando..." : "Confirmar Pedido"}
-          </Text>
-          <Icon name="send" size={20} color="#FFF" style={styles.buttonIcon} />
-        </TouchableOpacity>
+        <View style={styles.footerContainer}>
+          <Text style={styles.totalText}>Total: R${total.toFixed(2)}</Text>
+          <TouchableOpacity
+            style={[styles.confirmButton, loading && styles.disabledButton]}
+            onPress={confirmOrder}
+            disabled={loading}
+          >
+            <Text style={styles.confirmButtonText}>
+              {loading ? "Confirmando..." : "Confirmar Pedido"}
+            </Text>
+            <Icon
+              name="send"
+              size={22}
+              color="#FFF"
+              style={styles.buttonIcon}
+            />
+          </TouchableOpacity>
+        </View>
       </>
-    ),
-    [selectedItems, loading, confirmOrder, renderSelectedItem]
-  );
+    );
+  }, [selectedItems, loading, confirmOrder, renderSelectedItem]);
 
   return (
     <KeyboardAvoidingView
@@ -679,7 +697,12 @@ const DeliveryScreen = () => {
       >
         <View style={styles.contentContainer}>
           <Text style={styles.title}>Novo Pedido Delivery</Text>
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {error ? (
+            <View style={styles.errorContainer}>
+              <Icon name="error" size={20} color="#FF4444" />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
           {loading && (
             <ActivityIndicator
               size="large"
@@ -687,6 +710,11 @@ const DeliveryScreen = () => {
               style={styles.loader}
             />
           )}
+          <SearchBar
+            searchQuery={searchQuery}
+            handleSearch={handleSearch}
+            onInputFocus={handleInputFocus}
+          />
           <ClientDataSection
             clientData={clientData}
             updateClientName={updateClientName}
@@ -699,11 +727,6 @@ const DeliveryScreen = () => {
             updateDeliveryAddress={updateDeliveryAddress}
             updateDeliveryNeighborhood={updateDeliveryNeighborhood}
             updateDeliveryReference={updateDeliveryReference}
-            onInputFocus={handleInputFocus}
-          />
-          <SearchBar
-            searchQuery={searchQuery}
-            handleSearch={handleSearch}
             onInputFocus={handleInputFocus}
           />
         </View>
@@ -728,21 +751,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
+    // marginTop: 70,
   },
   scrollContent: {
     flexGrow: 1,
+    marginBottom: 5,
   },
   contentContainer: {
-    padding: 16,
+    padding: 20,
   },
   flatListContent: {
     flexGrow: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 100, // Espaço para o botão fixo
   },
   title: {
-    fontSize: 24,
-    fontWeight: "700",
-    marginBottom: 16,
+    fontSize: 28,
+    fontWeight: "bold",
+    marginBottom: 20,
     textAlign: "center",
     color: "#FF6F00",
   },
@@ -750,51 +776,64 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     borderRadius: 12,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#333",
+    marginLeft: 10,
+  },
+  inputContainer: {
+    marginBottom: 10,
+  },
+  inputLabel: {
+    fontSize: 16,
     fontWeight: "600",
     color: "#333",
-    marginLeft: 8,
+    marginBottom: 8,
   },
   input: {
     width: "100%",
-    height: 48,
+    height: 50,
     borderColor: "#DDD",
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    marginBottom: 12,
+    borderRadius: 10,
+    paddingHorizontal: 14,
     backgroundColor: "#FFF",
     color: "#333",
     fontSize: 16,
+  },
+  inputActive: {
+    borderColor: "#FF6F00",
+    borderWidth: 2,
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFF",
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: "#DDD",
-    marginBottom: 16,
+    marginBottom: 20,
+    paddingVertical: 4,
   },
   searchIcon: {
     marginLeft: 12,
   },
   searchInput: {
     flex: 1,
-    height: 48,
+    height: 50,
     paddingHorizontal: 12,
     fontSize: 16,
     color: "#333",
@@ -805,31 +844,31 @@ const styles = StyleSheet.create({
   itemCard: {
     flexDirection: "row",
     backgroundColor: "#FFF",
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 8,
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   itemInfo: {
     flex: 1,
   },
   itemText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#222",
     marginBottom: 4,
   },
   itemSubText: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#555",
-    marginBottom: 4,
+    marginBottom: 10,
   },
   itemCategory: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#888",
     fontStyle: "italic",
   },
@@ -837,72 +876,86 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FF6F00",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 8,
   },
   addButtonText: {
     color: "#FFF",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
-    marginLeft: 8,
+    marginLeft: 6,
   },
   selectedItemCard: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#FFF",
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 8,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
   },
   quantityContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 8,
   },
   quantityLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
     color: "#555",
     marginRight: 8,
   },
   quantityInput: {
-    width: 60,
-    height: 48,
+    width: 50,
+    height: 40,
     borderColor: "#DDD",
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 10,
     backgroundColor: "#FFF",
     color: "#333",
-    fontSize: 15,
+    fontSize: 14,
     textAlign: "center",
   },
   quantityButton: {
     backgroundColor: "#555",
     padding: 8,
-    borderRadius: 4,
+    borderRadius: 8,
     marginHorizontal: 4,
   },
   incrementButton: {
     backgroundColor: "#FF6F00",
   },
   removeButton: {
-    backgroundColor: "red",
+    backgroundColor: "#FF4444",
     padding: 8,
-    borderRadius: 4,
+    borderRadius: 8,
     marginLeft: 4,
+  },
+  footerContainer: {
+    backgroundColor: "#FFF",
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#EEE",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  totalText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 12,
+    textAlign: "center",
   },
   confirmButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#FF6F00",
-    paddingVertical: 14,
+    paddingVertical: 16,
     borderRadius: 12,
-    marginTop: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    elevation: 5,
   },
   disabledButton: {
     backgroundColor: "#888",
@@ -910,21 +963,26 @@ const styles = StyleSheet.create({
   },
   confirmButtonText: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#FFF",
     marginRight: 8,
   },
   buttonIcon: {
     marginLeft: 4,
   },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFE6E6",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
   errorText: {
     fontSize: 16,
     color: "#FF4444",
-    marginBottom: 16,
-    textAlign: "center",
-    backgroundColor: "#FFE6E6",
-    padding: 8,
-    borderRadius: 4,
+    marginLeft: 8,
+    flex: 1,
   },
   infoText: {
     fontSize: 16,
@@ -933,7 +991,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   loader: {
-    marginVertical: 16,
+    marginVertical: 20,
   },
 });
 
