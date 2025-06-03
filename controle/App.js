@@ -16,6 +16,7 @@ import HomeScreen from "./src/screens/HomeScreen";
 import HistoricoPedidosScreen from "./src/screens/HistoricoPedidosScreen";
 import CashFlowScreen from "./src/screens/CashFlowScreen";
 import DeliveryScreen from "./src/screens/DeliveryScreen";
+import VendaRapidaScreen from "./src/screens/VendaRapidaScreen";
 
 const Drawer = createDrawerNavigator();
 
@@ -45,6 +46,16 @@ function DrawerContent({ navigation }) {
   return (
     <View style={styles.drawerContainer}>
       <Text style={styles.drawerTitle}>Menu</Text>
+      <View style={{ marginVertical: 10 }}>
+        <Button
+          title="Venda Rápida"
+          onPress={() => {
+            navigation.navigate("VendaRapida");
+            navigation.closeDrawer();
+          }}
+          color="#FFA500"
+        />
+      </View>
       <View style={{ marginVertical: 10 }}>
         <Button
           title="Adicionar Mesa"
@@ -172,6 +183,7 @@ export default function App() {
           />
           <Drawer.Screen name="CashFlow" component={CashFlowScreen} />
           <Drawer.Screen name="Delivery" component={DeliveryScreen} />
+          <Drawer.Screen name="VendaRapida" component={VendaRapidaScreen} />
         </Drawer.Navigator>
         <StatusBar style="auto" />
       </NavigationContainer>
@@ -188,7 +200,7 @@ const styles = StyleSheet.create({
   drawerTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: 80,
     textAlign: "center",
   },
   modalOverlay: {
