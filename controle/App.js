@@ -14,6 +14,8 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import HomeScreen from "./src/screens/HomeScreen";
 import HistoricoPedidosScreen from "./src/screens/HistoricoPedidosScreen";
+import CashFlowScreen from "./src/screens/CashFlowScreen";
+import DeliveryScreen from "./src/screens/DeliveryScreen";
 
 const Drawer = createDrawerNavigator();
 
@@ -55,6 +57,28 @@ function DrawerContent({ navigation }) {
       </View>
       <View style={{ marginVertical: 10 }}>
         <Button
+          title="Delivery"
+          onPress={() => {
+            navigation.navigate("Delivery");
+            navigation.closeDrawer();
+          }}
+          color="#FFA500"
+        />
+      </View>
+      <View style={{ marginVertical: 10 }}>
+        <Button
+          title="Controle de Caixa"
+          onPress={() =>
+            checkPassword(() => {
+              navigation.navigate("CashFlow");
+              navigation.closeDrawer();
+            })
+          }
+          color="#FFA500"
+        />
+      </View>
+      <View style={{ marginVertical: 10 }}>
+        <Button
           title="Controle de Estoque"
           onPress={() =>
             checkPassword(() => {
@@ -77,18 +101,6 @@ function DrawerContent({ navigation }) {
           color="#FFA500"
         />
       </View>
-      {/* <View style={{ marginVertical: 10 }}>
-        <Button
-          title="Gerenciar Fichas Técnicas"
-          onPress={() =>
-            checkPassword(() => {
-              navigation.navigate("Home", { gerenciarFichas: true });
-              navigation.closeDrawer();
-            })
-          }
-          color="#FFA500"
-        />
-      </View> */}
       <View style={{ marginVertical: 10 }}>
         <Button
           title="Histórico"
@@ -114,10 +126,10 @@ function DrawerContent({ navigation }) {
             <TextInput
               style={styles.passwordInput}
               placeholder="Senha"
+              placeholderTextColor="#000"
               secureTextEntry
               value={password}
               onChangeText={setPassword}
-              placeholderTextColor="#888"
             />
             <View style={styles.modalButtons}>
               <Button
@@ -158,6 +170,8 @@ export default function App() {
             name="HistoricoPedidos"
             component={HistoricoPedidosScreen}
           />
+          <Drawer.Screen name="CashFlow" component={CashFlowScreen} />
+          <Drawer.Screen name="Delivery" component={DeliveryScreen} />
         </Drawer.Navigator>
         <StatusBar style="auto" />
       </NavigationContainer>

@@ -202,6 +202,7 @@ export default function AdicionarItensModal({
             <TextInput
               style={styles.input}
               placeholder="Quantidade"
+              placeholderTextColor="#000"
               keyboardType="numeric"
               value={selecionado.quantidade.toString()}
               onChangeText={(text) => atualizarQuantidade(item.nome, text)}
@@ -209,6 +210,7 @@ export default function AdicionarItensModal({
             <TextInput
               style={styles.inputObservacao}
               placeholder="Observação (opcional)"
+              placeholderTextColor="#000"
               value={selecionado.observacao}
               onChangeText={(text) => atualizarObservacao(item.nome, text)}
             />
@@ -299,6 +301,7 @@ export default function AdicionarItensModal({
               <TextInput
                 style={styles.inputBusca}
                 placeholder="Buscar item..."
+                placeholderTextColor="#000"
                 value={termoBusca}
                 onChangeText={(text) => {
                   "(NOBRIDGE) LOG Novo termo de busca:", text;

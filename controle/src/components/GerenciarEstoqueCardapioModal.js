@@ -14,7 +14,7 @@ import {
   adicionarNovoItemEstoque,
   adicionarNovoItemCardapio,
 } from "../services/mesaService";
-import { ensureFirebaseInitialized } from "../services/firebase";
+import { waitForFirebaseInit } from "../services/firebase";
 
 export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
   // Campos unificados para estoque e cardápio
@@ -64,7 +64,7 @@ export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
       const chaveUnica = `${categoria.slice(0, 3)}${Date.now()}`;
 
       // Adicionar ao estoque com categoria e preço
-      const db = await ensureFirebaseInitialized();
+      const db = await waitForFirebaseInit();
       const itemEstoque = {
         nome: nomeLimpo,
         quantidade: parseInt(quantidadeEstoque, 10),
@@ -120,12 +120,14 @@ export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
             <TextInput
               style={styles.input}
               placeholder="Nome do item (ex.: Cerveja)"
+              placeholderTextColor="#000"
               value={nomeEstoque}
               onChangeText={setNomeEstoque}
             />
             <TextInput
               style={styles.input}
               placeholder="Quantidade (ex.: 10)"
+              placeholderTextColor="#000"
               value={quantidadeEstoque}
               keyboardType="numeric"
               onChangeText={setQuantidadeEstoque}
@@ -133,18 +135,21 @@ export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
             <TextInput
               style={styles.input}
               placeholder="Unidade (ex.: unidades)"
+              placeholderTextColor="#000"
               value={unidadeEstoque}
               onChangeText={setUnidadeEstoque}
             />
             <TextInput
               style={styles.input}
               placeholder="Descrição (ex.: Lata 350ml)"
+              placeholderTextColor="#000"
               value={descricao}
               onChangeText={setDescricao}
             />
             <TextInput
               style={styles.input}
               placeholder="Estoque Mínimo (ex.: 2)"
+              placeholderTextColor="#000"
               value={estoqueMinimo}
               keyboardType="numeric"
               onChangeText={setEstoqueMinimo}
@@ -152,6 +157,7 @@ export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
             <TextInput
               style={styles.input}
               placeholder="Preço Unitário (ex.: 5.00)"
+              placeholderTextColor="#000"
               value={precoUnitario}
               keyboardType="numeric"
               onChangeText={setPrecoUnitario}
@@ -159,6 +165,7 @@ export default function GerenciarEstoqueCardapioModal({ visible, onClose }) {
             <Picker
               selectedValue={categoria}
               style={styles.picker}
+              itemStyle={styles.itemStyle} // Estilo para os itens da lista
               onValueChange={(itemValue) => setCategoria(itemValue)}
             >
               <Picker.Item label="Selecione uma categoria" value="" />
@@ -218,9 +225,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   picker: {
-    height: 50,
     width: "100%",
-    marginBottom: 10,
+    height: 60,
+    color: "black",
+  },
+  itemStyle: {
+    color: "black", // Cor do texto dos itens na lista suspensa (vermelho)
+    fontSize: 16,
   },
   botoes: {
     flexDirection: "row",

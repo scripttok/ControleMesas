@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Arena CRB",
+    "name": "Praça 43",
     "slug": "controle",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -13,14 +13,23 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryAddUsageDescription": "Permitir salvar arquivos",
+        "NSPhotoLibraryUsageDescription": "Permitir acessar arquivos"
+      }
     },
+
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.bardocesar.app.x",
+      "permissions": [
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ],
+      "package": "com.appbarracas.controle",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -47,8 +56,6 @@
         "projectId": "870c5fc9-a66c-48e5-9b03-a066714d88b4"
       }
     },
-    "runtimeVersion": {
-      "policy": "sdkVersion"
-    }
+    "runtimeVersion": "1.0.1"
   }
 }
