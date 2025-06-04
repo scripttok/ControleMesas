@@ -117,7 +117,7 @@ const VendaRapidaScreen = () => {
 
     try {
       console.log(
-        "(NOBRIDGE) LOG VendaRapidaScreen - Validando estoque:",
+        "(NOBRIDGE) LOG VendaRapidaScreen - Iniciando finalização. Itens:",
         itensValidos
       );
       await validarEstoqueParaPedido(itensValidos);

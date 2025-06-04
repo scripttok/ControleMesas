@@ -1,8 +1,78 @@
 import firebase from "firebase/compat/app";
 import "firebase/compat/database";
-import { waitForFirebaseInit, waitForConnection } from "./firebase";
+import { waitForFirebaseInit, waitForConnection, database } from "./firebase";
 
-// controle\src\services\mesaService.js
+// Função auxiliar para normalizar nomes
+const normalizeItemName = (name) => {
+  if (!name) return "";
+  return name
+    .toLowerCase()
+    .replace(/[\u00C0-\u00FF]/g, (char) => {
+      const accents = {
+        á: "a",
+        é: "e",
+        í: "i",
+        ó: "o",
+        ú: "u",
+        à: "a",
+        è: "e",
+        ì: "i",
+        ò: "o",
+        ù: "u",
+        â: "a",
+        ê: "e",
+        î: "i",
+        ô: "o",
+        û: "u",
+        ã: "a",
+        õ: "o",
+        ñ: "n",
+      };
+      return accents[char] || char;
+    })
+    .replace(/\s+/g, " ") // Normaliza espaços
+    .trim();
+};
+
+// Constante COMBOS_SUBITENS_RAW
+const COMBOS_SUBITENS_RAW = {
+  "Vodka Smirniff Cg Coco E Red Bull": [
+    { nome: "gelo de coco", quantidade: 1 },
+    { nome: "redbull", quantidade: 1 },
+  ],
+  "Ballantines Ou White Horse Cg Coco E Red Bull": [
+    { nome: "gelo de coco", quantidade: 1 },
+    { nome: "redbull", quantidade: 1 },
+  ],
+  "Red Label Com Gelo Coco E Red Bull": [
+    { nome: "gelo de coco", quantidade: 1 },
+    { nome: "redbull", quantidade: 1 },
+  ],
+  "Whisky 12 Anos Com Gelo Coco E Red Bull": [
+    { nome: "gelo de coco", quantidade: 1 },
+    { nome: "redbull", quantidade: 1 },
+  ],
+  "1 Litro Whisky Ballantines Ou W Horse + 4 Red Bull + 4 G Coco": [
+    { nome: "gelo de coco", quantidade: 4 },
+    { nome: "redbull", quantidade: 4 },
+  ],
+  "1 Litro Whisky Red Label  + 4 Red Bull + 4 G Coco": [
+    { nome: "gelo de coco", quantidade: 4 },
+    { nome: "redbull", quantidade: 4 },
+  ],
+  "1 Litro Whisky Black Label  + 4 Red Bull + 4 G Coco": [
+    { nome: "gelo de coco", quantidade: 4 },
+    { nome: "redbull", quantidade: 4 },
+  ],
+};
+
+// Normaliza as chaves de COMBOS_SUBITENS
+const COMBOS_SUBITENS = Object.keys(COMBOS_SUBITENS_RAW).reduce((acc, key) => {
+  acc[normalizeItemName(key)] = COMBOS_SUBITENS_RAW[key];
+  return acc;
+}, {});
+
+// Função para adicionar mesa no Firebase
 export const adicionarMesaNoFirebase = async (mesa) => {
   console.log(
     "(NOBRIDGE) LOG adicionarMesaNoFirebase - Iniciando adição de mesa:",
@@ -48,6 +118,328 @@ export const adicionarMesaNoFirebase = async (mesa) => {
   }
 };
 
+// Função para validar estoque para um pedido
+export const validarEstoqueParaPedido = async (itens) => {
+  await waitForFirebaseInit();
+  const db = database;
+
+  for (const item of itens) {
+    const normalizedItemName = normalizeItemName(item.nome);
+    console.log(`(NOBRIDGE) LOG validarEstoqueParaPedido - Validando item:`, {
+      nome: item.nome,
+      normalized: normalizedItemName,
+    });
+
+    // Verifica o estoque do item principal
+    const itemPrincipalSnapshot = await db.ref(`estoque`).once("value");
+    let found = false;
+    itemPrincipalSnapshot.forEach((childSnapshot) => {
+      const estoqueNome = childSnapshot.key;
+      const normalizedEstoqueNome = normalizeItemName(estoqueNome);
+      if (normalizedEstoqueNome === normalizedItemName) {
+        const estoqueData = childSnapshot.val();
+        console.log(
+          `(NOBRIDGE) LOG validarEstoqueParaPedido - Estoque encontrado para item principal:`,
+          {
+            itemNome: item.nome,
+            estoqueNome,
+            estoqueData,
+          }
+        );
+        if (estoqueData.quantidade < item.quantidade) {
+          throw new Error(
+            `Estoque insuficiente para ${item.nome}. Disponível: ${estoqueData.quantidade}, Necessário: ${item.quantidade}`
+          );
+        }
+        found = true;
+      }
+    });
+
+    // Verifica subitens de combos, se aplicável
+    const subitens = COMBOS_SUBITENS[normalizedItemName];
+    console.log(
+      `(NOBRIDGE) LOG validarEstoqueParaPedido - Verificando COMBOS_SUBITENS para:`,
+      {
+        itemNome: item.nome,
+        normalized: normalizedItemName,
+        subitens,
+      }
+    );
+    if (!subitens) {
+      console.log(
+        `(NOBRIDGE) LOG validarEstoqueParaPedido - Chaves disponíveis em COMBOS_SUBITENS:`,
+        Object.keys(COMBOS_SUBITENS)
+      );
+    }
+    if (subitens) {
+      console.log(
+        `(NOBRIDGE) LOG validarEstoqueParaPedido - Subitens do combo:`,
+        subitens
+      );
+      for (const subitem of subitens) {
+        const normalizedSubitemName = normalizeItemName(subitem.nome);
+        const quantidadeTotal = subitem.quantidade * item.quantidade;
+        console.log(
+          `(NOBRIDGE) LOG validarEstoqueParaPedido - Verificando subitem:`,
+          {
+            subItemNome: subitem.nome,
+            normalizedSubitemName,
+            quantidadeTotal,
+          }
+        );
+        const snapshot = await db
+          .ref(`estoque/${normalizedSubitemName}`)
+          .once("value");
+        if (!snapshot.exists()) {
+          throw new Error(`Subitem ${subitem.nome} não encontrado no estoque`);
+        }
+        const estoqueData = snapshot.val();
+        console.log(
+          `(NOBRIDGE) LOG validarEstoqueParaPedido - Estoque encontrado:`,
+          {
+            subItemNome: subitem.nome,
+            estoqueData,
+          }
+        );
+        if (estoqueData.quantidade < quantidadeTotal) {
+          throw new Error(
+            `Estoque insuficiente para ${subitem.nome}. Disponível: ${estoqueData.quantidade}, Necessário: ${quantidadeTotal}`
+          );
+        }
+      }
+    } else if (!found) {
+      console.warn(
+        `(NOBRIDGE) WARN validarEstoqueParaPedido - Item principal não encontrado no estoque e não é um combo:`,
+        {
+          itemNome: item.nome,
+          normalized: normalizedItemName,
+        }
+      );
+      throw new Error(
+        `Item ${item.nome} não encontrado no estoque e não é um combo`
+      );
+    }
+  }
+};
+
+// Função para validar estoque para uma venda
+export const validarEstoqueParaVenda = async (itens) => {
+  await waitForFirebaseInit();
+  const db = database;
+
+  for (const item of itens) {
+    const normalizedItemName = normalizeItemName(item.nome);
+    console.log(`(NOBRIDGE) LOG validarEstoqueParaVenda - Validando item:`, {
+      nome: item.nome,
+      normalized: normalizedItemName,
+    });
+
+    // Verifica o estoque do item principal
+    const itemPrincipalSnapshot = await db.ref(`estoque`).once("value");
+    let found = false;
+    itemPrincipalSnapshot.forEach((childSnapshot) => {
+      const estoqueNome = childSnapshot.key;
+      const normalizedEstoqueNome = normalizeItemName(estoqueNome);
+      if (normalizedEstoqueNome === normalizedItemName) {
+        const estoqueData = childSnapshot.val();
+        console.log(
+          `(NOBRIDGE) LOG validarEstoqueParaVenda - Estoque encontrado para item principal:`,
+          {
+            itemNome: item.nome,
+            estoqueNome,
+            estoqueData,
+          }
+        );
+        if (estoqueData.quantidade < item.quantidade) {
+          throw new Error(
+            `Estoque insuficiente para ${item.nome}. Disponível: ${estoqueData.quantidade}, Necessário: ${item.quantidade}`
+          );
+        }
+        found = true;
+      }
+    });
+
+    // Verifica subitens de combos, se aplicável
+    const subitens = COMBOS_SUBITENS[normalizedItemName];
+    console.log(
+      `(NOBRIDGE) LOG validarEstoqueParaVenda - Verificando COMBOS_SUBITENS para:`,
+      {
+        itemNome: item.nome,
+        normalized: normalizedItemName,
+        subitens,
+      }
+    );
+    if (!subitens) {
+      console.log(
+        `(NOBRIDGE) LOG validarEstoqueParaVenda - Chaves disponíveis em COMBOS_SUBITENS:`,
+        Object.keys(COMBOS_SUBITENS)
+      );
+    }
+    if (subitens) {
+      console.log(
+        `(NOBRIDGE) LOG validarEstoqueParaVenda - Subitens do combo:`,
+        subitens
+      );
+      for (const subitem of subitens) {
+        const normalizedSubitemName = normalizeItemName(subitem.nome);
+        const quantidadeTotal = subitem.quantidade * item.quantidade;
+        console.log(
+          `(NOBRIDGE) LOG validarEstoqueParaVenda - Verificando subitem:`,
+          {
+            subItemNome: subitem.nome,
+            normalizedSubitemName,
+            quantidadeTotal,
+          }
+        );
+        const snapshot = await db
+          .ref(`estoque/${normalizedSubitemName}`)
+          .once("value");
+        if (!snapshot.exists()) {
+          throw new Error(`Subitem ${subitem.nome} não encontrado no estoque`);
+        }
+        const estoqueData = snapshot.val();
+        console.log(
+          `(NOBRIDGE) LOG validarEstoqueParaVenda - Estoque encontrado:`,
+          {
+            subItemNome: subitem.nome,
+            estoqueData,
+          }
+        );
+        if (estoqueData.quantidade < quantidadeTotal) {
+          throw new Error(
+            `Estoque insuficiente para ${subitem.nome}. Disponível: ${estoqueData.quantidade}, Necessário: ${quantidadeTotal}`
+          );
+        }
+      }
+    } else if (!found) {
+      console.warn(
+        `(NOBRIDGE) WARN validarEstoqueParaVenda - Item principal não encontrado no estoque e não é um combo:`,
+        {
+          itemNome: item.nome,
+          normalized: normalizedItemName,
+        }
+      );
+      throw new Error(
+        `Item ${item.nome} não encontrado no estoque e não é um combo`
+      );
+    }
+  }
+};
+
+// Função para atualizar status do pedido e debitar estoque
+export const atualizarStatusPedido = async (pedidoId, entregue) => {
+  await waitForFirebaseInit();
+  const db = database;
+  const pedidoRef = db.ref(`pedidos/${pedidoId}`);
+  const snapshot = await pedidoRef.once("value");
+
+  if (!snapshot.exists()) {
+    throw new Error("Pedido não encontrado");
+  }
+
+  const pedidoData = snapshot.val();
+  const itens = pedidoData.itens || [];
+
+  if (entregue) {
+    for (const item of itens) {
+      const normalizedItemName = normalizeItemName(item.nome);
+      console.log(`(NOBRIDGE) LOG atualizarStatusPedido - Processando item:`, {
+        nome: item.nome,
+        normalized: normalizedItemName,
+      });
+
+      // Debita o item principal, se ele existir no estoque
+      const itemPrincipalSnapshot = await db.ref(`estoque`).once("value");
+      let found = false;
+      let estoqueNome = null;
+      itemPrincipalSnapshot.forEach((childSnapshot) => {
+        const currentEstoqueNome = childSnapshot.key;
+        const normalizedEstoqueNome = normalizeItemName(currentEstoqueNome);
+        if (normalizedEstoqueNome === normalizedItemName) {
+          const estoqueData = childSnapshot.val();
+          const novaQuantidade = estoqueData.quantidade - item.quantidade;
+          console.log(
+            `(NOBRIDGE) LOG atualizarStatusPedido - Debitando ${item.quantidade} de ${item.nome}. Nova quantidade: ${novaQuantidade}`
+          );
+          db.ref(`estoque/${currentEstoqueNome}`).update({
+            quantidade: novaQuantidade,
+          });
+          found = true;
+          estoqueNome = currentEstoqueNome;
+        }
+      });
+
+      if (!found) {
+        console.warn(
+          `(NOBRIDGE) WARN atualizarStatusPedido - Item principal não encontrado no estoque:`,
+          {
+            itemNome: item.nome,
+            normalized: normalizedItemName,
+          }
+        );
+      }
+
+      // Debita subitens de combos, se aplicável
+      const subitens = COMBOS_SUBITENS[normalizedItemName];
+      console.log(
+        `(NOBRIDGE) LOG atualizarStatusPedido - Verificando COMBOS_SUBITENS para:`,
+        {
+          itemNome: item.nome,
+          normalized: normalizedItemName,
+          subitens,
+        }
+      );
+      if (!subitens) {
+        console.log(
+          `(NOBRIDGE) LOG atualizarStatusPedido - Chaves disponíveis em COMBOS_SUBITENS:`,
+          Object.keys(COMBOS_SUBITENS)
+        );
+      }
+      if (subitens) {
+        console.log(
+          `(NOBRIDGE) LOG atualizarStatusPedido - Subitens do combo:`,
+          subitens
+        );
+        for (const subitem of subitens) {
+          const normalizedSubitemName = normalizeItemName(subitem.nome);
+          const quantidadeTotal = subitem.quantidade * item.quantidade;
+          console.log(
+            `(NOBRIDGE) LOG atualizarStatusPedido - Debitando ${quantidadeTotal} de ${subitem.nome}`
+          );
+          const subSnapshot = await db
+            .ref(`estoque/${normalizedSubitemName}`)
+            .once("value");
+          if (subSnapshot.exists()) {
+            const subEstoqueData = subSnapshot.val();
+            const novaSubQuantidade =
+              subEstoqueData.quantidade - quantidadeTotal;
+            console.log(
+              `(NOBRIDGE) LOG atualizarStatusPedido - Nova quantidade de ${subitem.nome}: ${novaSubQuantidade}`
+            );
+            await db
+              .ref(`estoque/${normalizedSubitemName}`)
+              .update({ quantidade: novaSubQuantidade });
+          } else {
+            console.error(
+              `(NOBRIDGE) ERROR atualizarStatusPedido - Subitem não encontrado no estoque:`,
+              {
+                subItemNome: subitem.nome,
+                normalizedSubItemName,
+              }
+            );
+            throw new Error(
+              `Subitem ${subitem.nome} não encontrado no estoque`
+            );
+          }
+        }
+      }
+    }
+  }
+
+  await pedidoRef.update({ entregue });
+};
+
+// Função para obter mesas
 export const getMesas = (callback) => {
   let ref;
   const setupListener = async () => {
@@ -60,7 +452,6 @@ export const getMesas = (callback) => {
     ref = freshDb.ref("mesas");
     let initialLoad = false;
 
-    // Carrega o snapshot inicial
     ref.on(
       "value",
       (snapshot) => {
@@ -82,7 +473,6 @@ export const getMesas = (callback) => {
       }
     );
 
-    // Escuta novas mesas adicionadas
     ref.on(
       "child_added",
       (snapshot) => {
@@ -94,7 +484,6 @@ export const getMesas = (callback) => {
           };
           console.log("Nova mesa adicionada (child_added):", newMesa);
           callback((prevMesas) => {
-            // Evita duplicação se a mesa já está no estado
             if (prevMesas.some((m) => m.id === newMesa.id)) {
               return prevMesas;
             }
@@ -117,6 +506,7 @@ export const getMesas = (callback) => {
   };
 };
 
+// Função para obter pedidos
 export const getPedidos = (callback) => {
   let ref;
   const setupListener = async () => {
@@ -153,6 +543,7 @@ export const getPedidos = (callback) => {
   };
 };
 
+// Função para atualizar mesa
 export const atualizarMesa = async (mesaId, updates) => {
   const freshDb = await waitForFirebaseInit();
   await waitForConnection(freshDb);
@@ -180,6 +571,7 @@ export const atualizarMesa = async (mesaId, updates) => {
   }
 };
 
+// Função para juntar mesas
 export const juntarMesas = async (mesaIds) => {
   if (mesaIds.length < 2) {
     throw new Error("É necessário pelo menos duas mesas para juntar.");
@@ -271,6 +663,7 @@ export const juntarMesas = async (mesaIds) => {
   }
 };
 
+// Função para adicionar pedido
 export const adicionarPedido = async (mesaId, itens) => {
   console.log("adicionarPedido - Iniciando para mesaId:", mesaId);
   console.log("adicionarPedido - Itens recebidos:", itens);
@@ -328,6 +721,7 @@ export const adicionarPedido = async (mesaId, itens) => {
   }
 };
 
+// Função para obter estoque
 export const getEstoque = (callback) => {
   let ref;
   const setupListener = async () => {
@@ -359,6 +753,7 @@ export const getEstoque = (callback) => {
   };
 };
 
+// Função para obter cardápio
 export const getCardapio = (callback) => {
   let ref;
   const setupListener = async () => {
@@ -402,11 +797,13 @@ export const getCardapio = (callback) => {
   };
 };
 
+// Função para remover pedido do Firebase
 export const removerPedidoDoFirebase = async (pedidoId) => {
   const db = await waitForFirebaseInit();
   return db.ref(`historicoPedidos/${pedidoId}`).remove();
 };
 
+// Função para remover pedido do histórico
 export const removerPedidoDoHistorico = async (pedidoId) => {
   try {
     const db = await waitForFirebaseInit();
@@ -419,6 +816,7 @@ export const removerPedidoDoHistorico = async (pedidoId) => {
   }
 };
 
+// Função para salvar histórico de pedido
 export const salvarHistoricoPedido = async (dadosPedido) => {
   const freshDb = await waitForFirebaseInit();
   try {
@@ -467,6 +865,7 @@ export const salvarHistoricoPedido = async (dadosPedido) => {
   }
 };
 
+// Função para obter histórico de pedidos
 export const getHistoricoPedidos = (callback) => {
   let ref;
   const setupListener = async () => {
@@ -516,267 +915,7 @@ export const getHistoricoPedidos = (callback) => {
   };
 };
 
-const COMBOS_SUBITENS = {
-  "Vodka Smirniff Cg Coco E Red Bull": [
-    { nome: "gelo de coco", quantidade: 1 },
-    { nome: "redbull", quantidade: 1 },
-  ],
-  "Ballantines Ou White Horse Cg Coco E Red Bull": [
-    { nome: "gelo de coco", quantidade: 1 },
-    { nome: "redbull", quantidade: 1 },
-  ],
-  "Red Label Com Gelo Coco E Red Bull": [
-    { nome: "gelo de coco", quantidade: 1 },
-    { nome: "redbull", quantidade: 1 },
-  ],
-  "Whisky 12 Anos Com Gelo Coco E Red Bull": [
-    { nome: "gelo de coco", quantidade: 1 },
-    { nome: "redbull", quantidade: 1 },
-  ],
-  "1 Litro Whisky Ballantines Ou W Horse + 4 Red Bull + 4 G Coco": [
-    { nome: "gelo de coco", quantidade: 4 },
-    { nome: "redbull", quantidade: 4 },
-  ],
-  "1 Litro Whisky Red Label  + 4 Red Bull + 4 G Coco": [
-    { nome: "gelo de coco", quantidade: 4 },
-    { nome: "redbull", quantidade: 4 },
-  ],
-  "1 Litro Whisky Black Label  + 4 Red Bull + 4 G Coco": [
-    { nome: "gelo de coco", quantidade: 4 },
-    { nome: "redbull", quantidade: 4 },
-  ],
-};
-
-export const atualizarStatusPedido = async (pedidoId, novoStatus) => {
-  const db = await waitForFirebaseInit();
-  try {
-    console.log("atualizarStatusPedido - Iniciando:", { pedidoId, novoStatus });
-    await db.ref(`pedidos/${pedidoId}`).update({ entregue: novoStatus });
-
-    if (novoStatus === true) {
-      console.log(
-        "atualizarStatusPedido - Pedido marcado como entregue, buscando dados"
-      );
-      const pedidoSnapshot = await db.ref(`pedidos/${pedidoId}`).once("value");
-      const pedido = pedidoSnapshot.val();
-      console.log("atualizarStatusPedido - Dados do pedido:", pedido);
-
-      if (!pedido || !pedido.itens) {
-        console.warn(
-          "atualizarStatusPedido - Pedido ou itens não encontrados:",
-          pedidoId
-        );
-        return;
-      }
-
-      for (const item of pedido.itens) {
-        console.log("atualizarStatusPedido - Processando item:", item);
-        const { nome, quantidade } = item;
-
-        if (!nome) {
-          console.warn(
-            "atualizarStatusPedido - Item sem nome, ignorando:",
-            item
-          );
-          continue;
-        }
-
-        if (COMBOS_SUBITENS[nome]) {
-          console.log("atualizarStatusPedido - Combo identificado:", {
-            nome,
-            subItens: COMBOS_SUBITENS[nome],
-          });
-          const subItens = COMBOS_SUBITENS[nome];
-
-          for (const subItem of subItens) {
-            const { nome: subItemNome, quantidade: subItemQuantidade } =
-              subItem;
-            if (!subItemNome) {
-              console.warn(
-                "atualizarStatusPedido - Subitem sem nome, ignorando:",
-                subItem
-              );
-              continue;
-            }
-
-            const quantidadeTotal = subItemQuantidade * (quantidade || 1);
-            console.log(
-              "atualizarStatusPedido - Baixando estoque para subitem:",
-              { subItemNome, quantidadeTotal, quantidadeItem: quantidade }
-            );
-
-            const estoqueSnapshot = await db
-              .ref(`estoque/${subItemNome.toLowerCase()}`)
-              .once("value");
-            const estoqueData = estoqueSnapshot.val();
-            console.log("atualizarStatusPedido - Estoque atual:", {
-              subItemNome,
-              estoqueData,
-            });
-
-            if (estoqueData) {
-              const quantidadeAtual = estoqueData.quantidade || 0;
-              const novaQuantidade = Math.max(
-                quantidadeAtual - quantidadeTotal,
-                0
-              );
-              console.log(
-                "atualizarStatusPedido - Nova quantidade calculada:",
-                { subItemNome, quantidadeAtual, novaQuantidade }
-              );
-
-              if (novaQuantidade > 0) {
-                await db
-                  .ref(`estoque/${subItemNome.toLowerCase()}`)
-                  .update({ quantidade: novaQuantidade });
-                console.log("atualizarStatusPedido - Estoque atualizado:", {
-                  subItemNome,
-                  novaQuantidade,
-                });
-              } else {
-                await db.ref(`estoque/${subItemNome.toLowerCase()}`).remove();
-                console.log(
-                  "atualizarStatusPedido - Subitem removido do estoque:",
-                  subItemNome
-                );
-                if (estoqueData.chaveCardapio && estoqueData.categoria) {
-                  await db
-                    .ref(
-                      `cardapio/${estoqueData.categoria}/${estoqueData.chaveCardapio}`
-                    )
-                    .remove();
-                  console.log(
-                    "atualizarStatusPedido - Subitem removido do cardápio:",
-                    subItemNome
-                  );
-                }
-              }
-            } else {
-              console.warn(
-                "atualizarStatusPedido - Subitem não encontrado no estoque:",
-                subItemNome
-              );
-            }
-          }
-        } else {
-          console.log("atualizarStatusPedido - Item não-combo:", {
-            nome,
-            quantidade,
-          });
-
-          const estoqueSnapshot = await db
-            .ref(`estoque/${nome.toLowerCase()}`)
-            .once("value");
-          const estoqueData = estoqueSnapshot.val();
-
-          if (estoqueData) {
-            const quantidadeAtual = estoqueData.quantidade || 0;
-            const novaQuantidade = Math.max(quantidadeAtual - quantidade, 0);
-
-            if (novaQuantidade > 0) {
-              await db
-                .ref(`estoque/${nome.toLowerCase()}`)
-                .update({ quantidade: novaQuantidade });
-              console.log("atualizarStatusPedido - Estoque atualizado:", {
-                nome,
-                novaQuantidade,
-              });
-            } else {
-              await db.ref(`estoque/${nome.toLowerCase()}`).remove();
-              console.log(
-                "atualizarStatusPedido - Item removido do estoque:",
-                nome
-              );
-              if (estoqueData.chaveCardapio && estoqueData.categoria) {
-                await db
-                  .ref(
-                    `cardapio/${estoqueData.categoria}/${estoqueData.chaveCardapio}`
-                  )
-                  .remove();
-                console.log(
-                  "atualizarStatusPedido - Item removido do cardápio:",
-                  nome
-                );
-              }
-            }
-          } else {
-            console.warn(
-              "atualizarStatusPedido - Item não encontrado no estoque:",
-              nome
-            );
-          }
-        }
-      }
-    }
-
-    console.log("atualizarStatusPedido - Status atualizado com sucesso:", {
-      pedidoId,
-      novoStatus,
-    });
-  } catch (error) {
-    console.error("atualizarStatusPedido - Erro:", error);
-    throw error;
-  }
-};
-
-export const validarEstoqueParaPedido = async (itens) => {
-  const db = await waitForFirebaseInit();
-  try {
-    for (const item of itens) {
-      const { nome, quantidade } = item;
-      console.log("Validando item:", { nome, quantidade });
-
-      if (COMBOS_SUBITENS[nome]) {
-        const subItens = COMBOS_SUBITENS[nome];
-        console.log("Subitens do combo:", subItens);
-        for (const subItem of subItens) {
-          const { nome: subItemNome, quantidade: subItemQuantidade } = subItem;
-          const quantidadeTotal = subItemQuantidade * (quantidade || 1);
-          console.log("Verificando subitem:", { subItemNome, quantidadeTotal });
-
-          const estoqueSnapshot = await db
-            .ref(`estoque/${subItemNome.toLowerCase()}`)
-            .once("value");
-          const estoqueData = estoqueSnapshot.val();
-          console.log("Estoque encontrado:", { subItemNome, estoqueData });
-
-          if (!estoqueData) {
-            throw new Error(`Item "${subItemNome}" não encontrado no estoque.`);
-          }
-
-          const quantidadeAtual = estoqueData.quantidade || 0;
-          if (quantidadeAtual < quantidadeTotal) {
-            throw new Error(
-              `Estoque insuficiente para "${subItemNome}". Necessário: ${quantidadeTotal}, Disponível: ${quantidadeAtual}.`
-            );
-          }
-        }
-      } else {
-        const estoqueSnapshot = await db
-          .ref(`estoque/${nome.toLowerCase()}`)
-          .once("value");
-        const estoqueData = estoqueSnapshot.val();
-        console.log("Estoque encontrado:", { nome, estoqueData });
-
-        if (!estoqueData) {
-          throw new Error(`Item "${nome}" não encontrado no estoque.`);
-        }
-
-        const quantidadeAtual = estoqueData.quantidade || 0;
-        if (quantidadeAtual < quantidade) {
-          throw new Error(
-            `Estoque insuficiente para "${nome}". Necessário: ${quantidade}, Disponível: ${quantidadeAtual}.`
-          );
-        }
-      }
-    }
-    return true;
-  } catch (error) {
-    console.error("Erro ao validar estoque:", error);
-    throw error;
-  }
-};
-
+// Função para adicionar novo item ao estoque
 export const adicionarNovoItemEstoque = async (
   nome,
   quantidade,
@@ -833,6 +972,7 @@ export const adicionarNovoItemEstoque = async (
   }
 };
 
+// Função para remover item do estoque
 export const removerEstoque = async (itemId, quantidade) => {
   const freshDb = await waitForFirebaseInit();
   await waitForConnection(freshDb);
@@ -865,6 +1005,7 @@ export const removerEstoque = async (itemId, quantidade) => {
   }
 };
 
+// Função para reverter estoque de um pedido
 export const reverterEstoquePedido = async (pedidoId) => {
   const db = await waitForFirebaseInit();
   try {
@@ -880,16 +1021,18 @@ export const reverterEstoquePedido = async (pedidoId) => {
     const itens = pedido.itens || [];
     for (const item of itens) {
       const { nome, quantidade } = item;
+      const normalizedItemName = normalizeItemName(nome);
 
-      if (COMBOS_SUBITENS[nome]) {
+      if (COMBOS_SUBITENS[normalizedItemName]) {
         console.log("Revertendo estoque para combo:", nome);
-        const subItens = COMBOS_SUBITENS[nome];
+        const subItens = COMBOS_SUBITENS[normalizedItemName];
         for (const subItem of subItens) {
           const { nome: subItemNome, quantidade: subItemQuantidade } = subItem;
+          const normalizedSubItemName = normalizeItemName(subItemNome);
           const quantidadeTotal = subItemQuantidade * (quantidade || 1);
 
           const estoqueSnapshot = await db
-            .ref(`estoque/${subItemNome.toLowerCase()}`)
+            .ref(`estoque/${normalizedSubItemName}`)
             .once("value");
           const estoqueData = estoqueSnapshot.val();
 
@@ -897,7 +1040,7 @@ export const reverterEstoquePedido = async (pedidoId) => {
           const novaQuantidade = quantidadeAtual + quantidadeTotal;
 
           await db
-            .ref(`estoque/${subItemNome.toLowerCase()}`)
+            .ref(`estoque/${normalizedSubItemName}`)
             .update({ quantidade: novaQuantidade });
           console.log("Estoque revertido para subitem:", {
             nome: subItemNome,
@@ -908,7 +1051,7 @@ export const reverterEstoquePedido = async (pedidoId) => {
         console.log("Revertendo estoque para item:", { nome, quantidade });
 
         const estoqueSnapshot = await db
-          .ref(`estoque/${nome.toLowerCase()}`)
+          .ref(`estoque/${normalizedItemName}`)
           .once("value");
         const estoqueData = estoqueSnapshot.val();
 
@@ -916,7 +1059,7 @@ export const reverterEstoquePedido = async (pedidoId) => {
         const novaQuantidade = quantidadeAtual + quantidade;
 
         await db
-          .ref(`estoque/${nome.toLowerCase()}`)
+          .ref(`estoque/${normalizedItemName}`)
           .update({ quantidade: novaQuantidade });
         console.log("Estoque revertido:", { nome, novaQuantidade });
       }
@@ -930,6 +1073,7 @@ export const reverterEstoquePedido = async (pedidoId) => {
   }
 };
 
+// Função para adicionar novo item ao cardápio
 export const adicionarNovoItemCardapio = async (
   nome,
   precoUnitario,
@@ -967,6 +1111,7 @@ export const adicionarNovoItemCardapio = async (
   }
 };
 
+// Função para remover item do estoque e cardápio
 export const removerItemEstoqueECardapio = async (nomeItem, categoria) => {
   const db = await waitForFirebaseInit();
   try {
@@ -993,6 +1138,7 @@ export const removerItemEstoqueECardapio = async (nomeItem, categoria) => {
   }
 };
 
+// Função para atualizar quantidade no estoque
 export const atualizarQuantidadeEstoque = async (
   nomeItem,
   novaQuantidade,
@@ -1030,6 +1176,7 @@ export const atualizarQuantidadeEstoque = async (
   }
 };
 
+// Função para adicionar ficha técnica
 export const adicionarFichaTecnica = async (
   itemCardapio,
   itemEstoque,
@@ -1060,6 +1207,7 @@ export const adicionarFichaTecnica = async (
   }
 };
 
+// Função para fechar mesa
 export const fecharMesa = async (mesaId, updates) => {
   const freshDb = await waitForFirebaseInit();
   await waitForConnection(freshDb);
@@ -1087,6 +1235,7 @@ export const fecharMesa = async (mesaId, updates) => {
   }
 };
 
+// Função para enviar comanda via WhatsApp
 export const enviarComandaViaWhatsApp = async (
   mesaId,
   pedidos,
@@ -1158,6 +1307,7 @@ export const enviarComandaViaWhatsApp = async (
   }
 };
 
+// Função para remover mesa
 export const removerMesa = async (mesaId) => {
   const freshDb = await waitForFirebaseInit();
   try {
@@ -1299,6 +1449,7 @@ export const removerMesa = async (mesaId) => {
   }
 };
 
+// Função para remover pedidos da mesa
 export const removerPedidosDaMesa = async (mesaId) => {
   const freshDb = await waitForFirebaseInit();
   try {
