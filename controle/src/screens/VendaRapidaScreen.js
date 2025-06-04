@@ -15,6 +15,7 @@ import {
   adicionarPedido,
   removerPedidosDaMesa,
   atualizarStatusPedido,
+  salvarHistoricoPedido,
 } from "../services/mesaService";
 
 const VendaRapidaScreen = () => {
@@ -129,6 +130,37 @@ const VendaRapidaScreen = () => {
         pedidoId
       );
 
+      // Calcula o total da venda
+      const total = itensValidos.reduce(
+        (sum, item) => sum + (item.quantidade * item.precoUnitario || 0),
+        0
+      );
+
+      // Prepara os dados para o histórico
+      const dadosPedido = {
+        nomeCliente: "Venda Rápida", // Nome genérico para vendas rápidas
+        itens: itensValidos,
+        totalSemDesconto: total,
+        desconto: 0, // Sem desconto por padrão; ajuste se necessário
+        total: total,
+        recebido: total, // Assume que o valor foi pago integralmente
+        troco: 0, // Assume que não há troco; ajuste se necessário
+        historicoPagamentos: [
+          {
+            valor: total,
+            metodo: "dinheiro", // Ajuste o método de pagamento conforme necessário
+            data: new Date().toISOString(),
+          },
+        ],
+      };
+
+      // Salva no histórico
+      const historicoId = await salvarHistoricoPedido(dadosPedido);
+      console.log(
+        "(NOBRIDGE) LOG VendaRapidaScreen - Pedido salvo no histórico com ID:",
+        historicoId
+      );
+
       // Marca o pedido como entregue para dar baixa no estoque
       await atualizarStatusPedido(pedidoId, true);
       console.log(
@@ -142,7 +174,7 @@ const VendaRapidaScreen = () => {
         "(NOBRIDGE) LOG VendaRapidaScreen - Pedido temporário removido"
       );
 
-      Alert.alert("Sucesso", "Compra finalizada com sucesso!");
+      Alert.alert("Sucesso", "Compra finalizada e registrada no histórico!");
       setItensSelecionados([]);
       setTermoBusca("");
     } catch (error) {
