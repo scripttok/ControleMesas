@@ -37,10 +37,17 @@ export default function FecharComandaModal({
   const [metodoPagamento, setMetodoPagamento] = useState("dinheiro");
 
   useEffect(() => {
+    console.log("(NOBRIDGE) LOG useEffect - Estado inicial:", {
+      divisao,
+      valorPago,
+      valorRecebido,
+      desconto,
+      isSubmitting,
+    });
     return () => {
       setIsSubmitting(false);
     };
-  }, []);
+  }, [divisao, valorPago, valorRecebido, desconto, isSubmitting]);
 
   const calcularTotalPedido = (itens) => {
     const itensValidos = Array.isArray(itens) ? itens : [];
@@ -83,26 +90,35 @@ export default function FecharComandaModal({
     const total = Math.max(0, totalSemDesconto - descontoNum);
     console.log(
       "(NOBRIDGE) LOG calcularTotalComDesconto - Total com desconto:",
-      total
+      { totalSemDesconto, descontoNum, total }
     );
     return total.toFixed(2);
   };
 
   const calcularRestante = () => {
     const totalComDesconto = parseFloat(calcularTotalComDesconto()) || 0;
-    const pagoAnterior = parseFloat(mesa?.valorPago) || 0;
-    const pagoNovo = parseFloat(valorPago) || 0;
+    const pagoAnterior = parseFloat(mesa?.valorPago || 0) || 0;
+    const pagoNovo = parseFloat(valorPago || 0) || 0;
     const restante = Math.max(0, totalComDesconto - (pagoAnterior + pagoNovo));
-    console.log("(NOBRIDGE) LOG calcularRestante - Restante:", restante);
+    console.log("(NOBRIDGE) LOG calcularRestante - Restante:", {
+      totalComDesconto,
+      pagoAnterior,
+      pagoNovo,
+      restante,
+    });
     return restante.toFixed(2);
   };
 
   const calcularDivisao = () => {
     const restante = parseFloat(calcularRestante()) || 0;
     const numDivisao = parseInt(divisao) || 1;
-    const divisao = restante / numDivisao;
-    console.log("(NOBRIDGE) LOG calcularDivisao - Divisão:", divisao);
-    return divisao.toFixed(2);
+    const divisaoValue = numDivisao >= 1 ? restante / numDivisao : restante;
+    console.log("(NOBRIDGE) LOG calcularDivisao - Divisão:", {
+      restante,
+      numDivisao,
+      divisao: divisaoValue,
+    });
+    return divisaoValue.toFixed(2);
   };
 
   const calcularTroco = () => {
@@ -454,13 +470,9 @@ export default function FecharComandaModal({
         items: resumoConta.itens.map((item) => ({
           name: item.item,
           orderQuantity: item.quantidade,
-          price: isNaN(parseFloat(item.precoUnitario))
-            ? 0
-            : parseFloat(item.precoUnitario),
+          price: parseFloat(item.precoUnitario) || 0,
         })),
-        total: isNaN(parseFloat(resumoConta.total))
-          ? 0
-          : parseFloat(resumoConta.total),
+        total: parseFloat(resumoConta.total) || 0,
         createdAt: new Date(),
         status: "Pendente",
       };
@@ -482,6 +494,7 @@ export default function FecharComandaModal({
       setIsSubmitting(false);
     }
   };
+
   const CustomButton = ({ title, onPress, color, disabled }) => (
     <TouchableOpacity
       style={[
@@ -493,6 +506,11 @@ export default function FecharComandaModal({
     >
       <Text style={styles.buttonText}>{title}</Text>
     </TouchableOpacity>
+  );
+
+  console.log(
+    "(NOBRIDGE) LOG Antes de renderizar divisao - Valor:",
+    calcularDivisao()
   );
 
   return (
@@ -510,10 +528,13 @@ export default function FecharComandaModal({
             <TextInput
               style={styles.input}
               placeholder="Digite o desconto (ex.: 10.00)"
-              placeholderTextColor="#000"
+              placeholderTextColor="#999"
               keyboardType="numeric"
               value={desconto}
-              onChangeText={(text) => setDesconto(text.replace(/[^0-9.]/g, ""))}
+              onChangeText={(text) => {
+                console.log("(NOBRIDGE) LOG Desconto input:", text);
+                setDesconto(text.replace(/[^0-9.]/g, ""));
+              }}
             />
             <Text style={styles.totalGeral}>
               Total com desconto: R$ {calcularTotalComDesconto()}
@@ -522,10 +543,18 @@ export default function FecharComandaModal({
             <TextInput
               style={styles.input}
               placeholder="Ex.: 1"
-              placeholderTextColor="#000"
+              placeholderTextColor="#999"
               keyboardType="numeric"
               value={divisao}
-              onChangeText={(text) => setDivisao(text.replace(/[^0-9]/g, ""))}
+              onChangeText={(text) => {
+                const cleanedText = text.replace(/[^0-9]/g, "");
+                console.log("(NOBRIDGE) LOG Divisao input:", cleanedText);
+                if (cleanedText === "" || parseInt(cleanedText) < 1) {
+                  setDivisao("");
+                } else {
+                  setDivisao(cleanedText);
+                }
+              }}
             />
             <Text style={styles.divisao}>
               Valor por parte: R$ {calcularDivisao()}
@@ -534,25 +563,26 @@ export default function FecharComandaModal({
             <TextInput
               style={styles.input}
               placeholder="Digite o valor pago (ex.: 15.00)"
-              placeholderTextColor="#000"
+              placeholderTextColor="#999"
               keyboardType="numeric"
               value={valorPago}
-              onChangeText={(text) =>
-                setValorPago(text.replace(/[^0-9.]/g, ""))
-              }
+              onChangeText={(text) => {
+                console.log("(NOBRIDGE) LOG ValorPago input:", text);
+                setValorPago(text.replace(/[^0-9.]/g, ""));
+              }}
             />
             <Text style={styles.label}>Valor Recebido:</Text>
             <TextInput
               style={styles.input}
               placeholder="Digite o valor recebido (ex.: 50.00)"
-              placeholderTextColor="#000"
+              placeholderTextColor="#999"
               keyboardType="numeric"
               value={valorRecebido}
-              onChangeText={(text) =>
-                setValorRecebido(text.replace(/[^0-9.]/g, ""))
-              }
+              onChangeText={(text) => {
+                console.log("(NOBRIDGE) LOG ValorRecebido input:", text);
+                setValorRecebido(text.replace(/[^0-9.]/g, ""));
+              }}
             />
-
             {!isPagamentoSuficiente() && isPagamentoParcial() && (
               <Text style={styles.saldoDevedor}>
                 Saldo Devedor: R$ {calcularRestante()}
@@ -569,11 +599,14 @@ export default function FecharComandaModal({
             <Text style={styles.label}>Número do Cliente:</Text>
             <TextInput
               style={styles.input}
-              placeholder="Número do Cliente (ex.: 11987654321)"
-              placeholderTextColor="#000"
+              placeholder="Ex.: 11987654321"
+              placeholderTextColor="#999"
               keyboardType="phone-pad"
               value={telefoneCliente}
-              onChangeText={setTelefoneCliente}
+              onChangeText={(text) => {
+                console.log("(NOBRIDGE) LOG TelefoneCliente input:", text);
+                setTelefoneCliente(text);
+              }}
             />
             <View style={styles.botoes}>
               <CustomButton

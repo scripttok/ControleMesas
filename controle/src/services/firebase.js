@@ -27,25 +27,25 @@ import {
 //   appId: "1:315629037060:android:89c18e6e3ad4214b743751",
 // };
 
-// const firebaseConfig = {
-//   apiKey: "AIzaSyD0cmNAsBDsecY08PPYYXDdGukEGbYpcRA",
-//   authDomain: "barracasdepraia-x.firebaseapp.com",
-//   databaseURL: "https://barracasdepraia-x-default-rtdb.firebaseio.com",
-//   projectId: "barracasdepraia-x",
-//   storageBucket: "barracasdepraia-x.firebasestorage.app",
-//   messagingSenderId: "584844051269",
-//   appId: "1:584844051269:android:8e91caf4e685a371f5b42c",
-// };
-
 const firebaseConfig = {
-  apiKey: "AIzaSyDpLSlZXOfJCmSVLZwads9EAPENmpy73r8",
-  authDomain: "barracasdepraia-334e2.firebaseapp.com",
-  databaseURL: "https://barracasdepraia-334e2-default-rtdb.firebaseio.com",
-  projectId: "barracasdepraia-228c0",
-  storageBucket: "barracasdepraia-334e2.firebasestorage.app",
-  messagingSenderId: "823906762219",
-  appId: "1:823906762219:android:9dcfd05d545122c6d1edae",
+  apiKey: "AIzaSyD0cmNAsBDsecY08PPYYXDdGukEGbYpcRA",
+  authDomain: "barracasdepraia-x.firebaseapp.com",
+  databaseURL: "https://barracasdepraia-x-default-rtdb.firebaseio.com",
+  projectId: "barracasdepraia-x",
+  storageBucket: "barracasdepraia-x.firebasestorage.app",
+  messagingSenderId: "584844051269",
+  appId: "1:584844051269:android:8e91caf4e685a371f5b42c",
 };
+
+// const firebaseConfig = {
+//   apiKey: "AIzaSyDpLSlZXOfJCmSVLZwads9EAPENmpy73r8",
+//   authDomain: "barracasdepraia-334e2.firebaseapp.com",
+//   databaseURL: "https://barracasdepraia-334e2-default-rtdb.firebaseio.com",
+//   projectId: "barracasdepraia-228c0",
+//   storageBucket: "barracasdepraia-334e2.firebasestorage.app",
+//   messagingSenderId: "823906762219",
+//   appId: "1:823906762219:android:9dcfd05d545122c6d1edae",
+// };
 
 // cesar esse abaixo
 
